@@ -326,8 +326,8 @@ void myDisplay(void)
 
 	// Draw door
 	glPushMatrix();
-	glTranslatef(10.0, 0.0, -30.0);
-	glScalef(0.001, 0.001, 0.001);
+	glTranslatef(-30.0, 0.0, -15.0);
+	glScalef(0.1, 0.1, 0.1);
 	glRotatef(0.0f, 1, 0, 0);
 	model_door.Draw();
 	glPopMatrix();
@@ -585,7 +585,7 @@ void LoadAssets()
 	model_couch2.Load("Models/couch2/couch2.3ds");
 	model_naruto.Load("Models/naruto/player.3ds");
 	model_lamp.Load("Models/lamp/lamp.3ds");
-	//model_lamp.Load("Models/door/door.3ds");
+	model_door.Load("Models/door/door.3ds");
 
 	
 
