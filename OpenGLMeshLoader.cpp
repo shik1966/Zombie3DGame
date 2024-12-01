@@ -64,7 +64,7 @@ Model_3DS model_couch;
 Model_3DS model_couch2;
 Model_3DS model_naruto;
 Model_3DS model_door;
-
+Model_3DS model_table;
 
 
 // Textures
@@ -332,6 +332,15 @@ void myDisplay(void)
 	model_door.Draw();
 	glPopMatrix();
 
+	// Draw door
+	glPushMatrix();
+	glTranslatef(-30.0, 0.0, -15.0);
+	glScalef(0.1, 0.1, 0.1);
+	glRotatef(0.0f, 1, 0, 0);
+	model_table.Draw();
+	glPopMatrix();
+
+
 	//sky box
 	glPushMatrix();
 
@@ -583,9 +592,9 @@ void LoadAssets()
 	// Loading Model files
 	model_couch.Load("Models/couch/couch.3ds");
 	model_couch2.Load("Models/couch2/couch2.3ds");
-	model_naruto.Load("Models/naruto/player.3ds");
+	model_naruto.Load("Models/naruto/naruto.3ds");
 	model_lamp.Load("Models/lamp/lamp.3ds");
-	model_door.Load("Models/door/door.3ds");
+	model_table.Load("Models/table/table.3ds");
 
 	
 
@@ -609,7 +618,7 @@ void main(int argc, char** argv)
 
 	glutInitWindowSize(WIDTH, HEIGHT);
 
-	glutInitWindowPosition(100, 150);
+	glutInitWindowPosition(0, 0);
 
 	glutCreateWindow(title);
 
