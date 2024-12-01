@@ -1,0 +1,70 @@
+# 
+# Wavefront material file
+# Converted by the DEEP Exploration  Deep Exploration 6.3 x64 6.3.3.8069
+# Right Hemisphere, LTD
+# http://www.righthemisphere.com/
+# 
+
+newmtl Black_Plastic
+Ka 0.270588 0.270588 0.270588
+Kd 0.270588 0.270588 0.270588
+Ks 1 1 1
+illum 2
+Ns 16
+map_Kd 
+map_bump 
+bump 
+map_opacity 
+map_d 
+refl 
+map_kS 
+map_kA 
+map_Ns 
+
+newmtl Vases
+Ka 0.968628 0.929412 0.854902
+Kd 0.968628 0.929412 0.854902
+Ks 1 1 1
+illum 2
+Ns 388.023
+map_Kd 
+map_bump 
+bump 
+map_opacity 
+map_d 
+refl 
+map_kS 
+map_kA 
+map_Ns 
+
+newmtl Book
+Ka 0.905882 0.905882 0.905882
+Kd 0.905882 0.905882 0.905882
+Ks 1 1 1
+illum 2
+Ns 512
+map_Kd wse4rgnb.png
+map_bump 
+bump 
+map_opacity 
+map_d 
+refl 
+map_kS 
+map_kA 
+map_Ns 
+
+newmtl Wood
+Ka 0.694118 0.647059 0.584314
+Kd 0.694118 0.647059 0.584314
+Ks 1 1 1
+illum 2
+Ns 78.7932
+map_Kd wderbbvb.png
+map_bump 
+bump 
+map_opacity 
+map_d 
+refl 
+map_kS 
+map_kA 
+map_Ns 

@@ -65,6 +65,9 @@ Model_3DS model_couch2;
 Model_3DS model_naruto;
 Model_3DS model_door;
 Model_3DS model_table;
+Model_3DS model_cubes;
+Model_3DS model_tv;
+Model_3DS model_window;
 
 
 // Textures
@@ -323,7 +326,6 @@ void myDisplay(void)
 	glPopMatrix();
 
 
-
 	// Draw door
 	glPushMatrix();
 	glTranslatef(-30.0, 0.0, -15.0);
@@ -332,12 +334,34 @@ void myDisplay(void)
 	model_door.Draw();
 	glPopMatrix();
 
-	// Draw door
+	// Draw table
 	glPushMatrix();
-	glTranslatef(-30.0, 0.0, -15.0);
-	glScalef(0.1, 0.1, 0.1);
+	glTranslatef(-26.0, 0.0, -28.0);
+	glScalef(0.05, 0.05, 0.05);
 	glRotatef(0.0f, 1, 0, 0);
 	model_table.Draw();
+	glPopMatrix();
+
+	// Draw cubes
+	glPushMatrix();
+	glTranslatef(-15.0, 0.0, -15.0);
+	glScalef(1, 1, 1);
+	glRotatef(0.0f, 1, 0, 0);
+	model_cubes.Draw();
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(28.0, 0.0, 0.0);
+	glScalef(0.005, 0.005, 0.005);
+	glRotatef(0.0f, 1, 0, 0);
+	model_tv.Draw();
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(0.0, 10.0, 30.0);
+	glScalef(0.005, 0.005, 0.005);
+	glRotatef(0.0f, 1, 0, 0);
+	model_window.Draw();
 	glPopMatrix();
 
 
@@ -590,12 +614,15 @@ void myReshape(int w, int h)
 void LoadAssets()
 {
 	// Loading Model files
-	model_couch.Load("Models/couch/couch.3ds");
-	model_couch2.Load("Models/couch2/couch2.3ds");
-	model_naruto.Load("Models/naruto/naruto.3ds");
-	model_lamp.Load("Models/lamp/lamp.3ds");
-	model_table.Load("Models/table/table.3ds");
-
+	//model_couch.Load("Models/couch/couch.3ds");
+	//model_couch2.Load("Models/couch2/couch2.3ds");
+	//model_naruto.Load("Models/naruto/naruto.3ds");
+	//model_lamp.Load("Models/lamp/lamp.3ds");
+	//model_door.Load("Models/door/door.3ds");
+	//model_table.Load("Models/table/table.3ds");
+	//model_cubes.Load("Models/childCubes/cubes.3ds");
+	//model_tv.Load("Models/tv/tv.3ds");
+	model_window.Load("Models/window/window.3ds");
 	
 
 
