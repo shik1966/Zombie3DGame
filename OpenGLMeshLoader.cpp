@@ -37,13 +37,18 @@ public:
 
 Model_3DS model_zombie;
 
+#include <ctime> // Include this for time functions
+
 class Zombie {
 public:
 	float x, y, z; // Position
 	float health;
 	bool active;
+	time_t lastHitTime; // Time of the last hit
 
-	Zombie(float posX, float posY, float posZ) : x(posX), y(posY), z(posZ), health(100.0f), active(true) {}
+	Zombie(float posX, float posY, float posZ) : x(posX), y(posY), z(posZ), health(100.0f), active(true) {
+		lastHitTime = 0; // Initialize last hit time
+	}
 
 	void draw() {
 		if (!active) return;
@@ -67,6 +72,15 @@ public:
 			z += direction.z * speed;
 		}
 	}
+
+	bool canHit() {
+		time_t currentTime = time(NULL);
+		if (difftime(currentTime, lastHitTime) >= 3) { // Check if 3 seconds have passed
+			lastHitTime = currentTime;
+			return true;
+		}
+		return false;
+	}
 };
 
 #include <vector>
@@ -88,7 +102,7 @@ bool firstPersonMode = false;  // Initially set to false
 double playerAngle = 0;  // Angle in degrees, initialized to 0
 double weaponAngle = 0;
 
-float wallHeight = 20.0;  // Height of the walls
+float wallHeight = 40.0;  // Height of the walls
 
 // Global variables to track mouse position and player's view direction
 float lastX = WIDTH / 2.0;
@@ -833,7 +847,6 @@ void spawnZombie(int value) {
 		glutTimerFunc(10000, spawnZombie, 0); // Spawn another zombie in 10 seconds
 	}
 }
-
 void updateZombiePosition(int value) {
 	if (!gameActive) return;
 
@@ -848,8 +861,8 @@ void updateZombiePosition(int value) {
 		float dz = playerZ - zombie.z;
 		float distance = sqrt(dx * dx + dz * dz);
 
-		// Check for collision
-		if (distance < collisionDistance) {
+		// Check for collision and whether the zombie can hit again
+		if (distance < collisionDistance && zombie.canHit()) {
 			playerHealth -= damage;
 			printf("Player hit! Health: %f\n", playerHealth); // Output the health to console (or handle as needed)
 		}
@@ -858,6 +871,7 @@ void updateZombiePosition(int value) {
 	glutPostRedisplay();
 	glutTimerFunc(100, updateZombiePosition, 0);
 }
+
 
 
 
