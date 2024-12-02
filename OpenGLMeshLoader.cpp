@@ -35,6 +35,44 @@ public:
 	}
 };
 
+Model_3DS model_zombie;
+
+class Zombie {
+public:
+	float x, y, z; // Position
+	float health;
+	bool active;
+
+	Zombie(float posX, float posY, float posZ) : x(posX), y(posY), z(posZ), health(100.0f), active(true) {}
+
+	void draw() {
+		if (!active) return;
+		glPushMatrix();
+		glTranslatef(x, y + 3, z);
+		glScalef(0.25, 0.25, 0.25);
+		model_zombie.Draw();
+		glPopMatrix();
+	}
+
+	void updatePosition(float playerX, float playerZ) {
+		float speed = 0.05;
+		Vector direction(playerX - x, 0, playerZ - z);
+		float distance = sqrt(direction.x * direction.x + direction.z * direction.z);
+
+		if (distance > 1.0) { // Avoid clumping exactly on the player
+			direction.x /= distance;
+			direction.z /= distance;
+
+			x += direction.x * speed;
+			z += direction.z * speed;
+		}
+	}
+};
+
+#include <vector>
+std::vector<Zombie> zombies;
+
+
 Vector Eye(30, 30, 20);
 Vector At(0, 0, 0);
 Vector Up(0, 2, 0);
@@ -42,11 +80,13 @@ Vector Up(0, 2, 0);
 int cameraZoom = 0;
 int currentView = 0;  // Default to 0 which could be your free camera or another default view
 float playerX = 0.0f, playerY = 0.0f, playerZ = 0.0f;  // Player's position
+float weaponX = 0.0f, weaponY = 2.0f, weaponZ = 0.0f;  // Player's position
 float playerYaw = 0.0f;  // Player's yaw angle in degrees
 
 bool firstPersonMode = false;  // Initially set to false
 // Global variable
 double playerAngle = 0;  // Angle in degrees, initialized to 0
+double weaponAngle = 0;
 
 float wallHeight = 20.0;  // Height of the walls
 
@@ -58,6 +98,16 @@ float yaw = -90.0f;   // Yaw is initialized to -90.0 degrees since a yaw of 0.0 
 float pitch = 0.0f;
 const float sensitivity = 0.1f;
 
+// Define global variables
+float zombieX = -20.0f, zombieY = 0.0f, zombieZ = -20.0f; // Initial position of the zombie
+float playerHealth = 100.0f;
+
+int gameTime = 80;  // 60 seconds game timer
+bool gameActive = true;
+
+void updateGame(int value); // Forward declaration for the game update function
+
+
 // Model Variables
 Model_3DS model_lamp;
 Model_3DS model_couch;
@@ -68,11 +118,22 @@ Model_3DS model_table;
 Model_3DS model_cubes;
 Model_3DS model_tv;
 Model_3DS model_window;
+Model_3DS model_gun;
+//Model_3DS model_zombie;
 
 
 // Textures
 GLTexture tex_ground;
 
+
+
+void renderBitmapString(float x, float y, void* font, const char* string) {
+	char* c;
+	glRasterPos2f(x, y);
+	for (c = (char*)string; *c != '\0'; c++) {
+		glutBitmapCharacter(font, *c);
+	}
+}
 
 //=======================================================================
 // Lighting Configuration Function
@@ -320,7 +381,7 @@ void myDisplay(void)
 	// Draw naruto
 	glPushMatrix();
 	glTranslatef(playerX, playerY, playerZ);
-	glScalef(0.025, 0.025, 0.025);
+	glScalef(0.03, 0.03, 0.03);
 	glRotatef(playerAngle, 0.0f, 1.0f, 0.0f);  // Rotate Naruto around the y-axis
 	model_naruto.Draw();
 	glPopMatrix();
@@ -364,6 +425,55 @@ void myDisplay(void)
 	model_window.Draw();
 	glPopMatrix();
 
+	glPushMatrix();
+	glTranslatef(weaponX + 2,weaponY , weaponZ);
+	glScalef(0.0035, 0.0035, 0.0035);
+	glRotatef(weaponAngle, 0, 1, 0);
+	model_gun.Draw();
+	glPopMatrix();
+
+	// Set up 2D orthographic projection to draw text
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	gluOrtho2D(0, WIDTH, 0, HEIGHT);
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	// Disable lighting and depth test for 2D rendering
+	glDisable(GL_LIGHTING);
+	glDisable(GL_DEPTH_TEST);
+
+	// Set text color
+	glColor3f(1.0, 1.0, 1.0); // White color
+
+	char healthText[50];
+	sprintf(healthText, "Health: %.2f", playerHealth);
+	renderBitmapString(10, HEIGHT - 20, GLUT_BITMAP_HELVETICA_18, healthText);
+
+	// Restore matrices, lighting, and depth test
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+
+	glEnable(GL_LIGHTING);
+	glEnable(GL_DEPTH_TEST);
+
+	//glPushMatrix();
+	//glTranslatef(zombieX, zombieY + 3, zombieZ);
+	//glScalef(0.25, 0.25, 0.25);
+	//glRotatef(0, 0.0f, 1.0f, 0.0f);  // Rotate Naruto around the y-axis
+	//model_zombie.Draw();
+	//glPopMatrix();
+
+	for (auto& zombie : zombies) {
+		zombie.draw();
+	}
+
+
 
 	//sky box
 	glPushMatrix();
@@ -399,11 +509,26 @@ void setupCamera() {
 
 	if (firstPersonMode) {
 		// First-person camera setup
-		gluLookAt(playerX, playerY + 7.0, playerZ,  // Camera position at player's eye level
-			playerX + sin(playerAngle * M_PI / 180.0), playerY + 7.0, playerZ + cos(playerAngle * M_PI / 180.0),  // Look at point
+		gluLookAt(playerX, playerY + 5, playerZ,  // Camera position at player's eye level
+			playerX + sin(playerAngle * M_PI / 180.0), playerY + 5, playerZ + cos(playerAngle * M_PI / 180.0),  // Look at point
 			0.0, 1.0, 0.0);  // Up vector is always straight up
+
+		// Draw weapon in first person view
+		glPushMatrix();
+		// Move to the player's position
+		glTranslatef(playerX, playerY + 5, playerZ);
+		// Rotate the weapon around the player's position
+		glRotatef(playerAngle, 0.0f, 1.0f, 0.0f);
+		// Move the weapon out in front of the player
+		glTranslatef(0.5, -0.2, 0.2); // These values control the position relative to the player
+		glScalef(0.05, 0.05, 0.05);  // Scale the weapon
+		model_gun.Draw();
+		glPopMatrix();
+
 	}
+
 	else {
+		// Other camera views
 		switch (currentView) {
 		case 1:  // Top View
 			gluLookAt(0.0, 50.0, 5.0,
@@ -427,6 +552,17 @@ void setupCamera() {
 			break;
 		}
 	}
+
+	// Draw Naruto (if visible in first-person mode)
+	if (!firstPersonMode) {
+		glPushMatrix();
+		glTranslatef(playerX, playerY, playerZ);
+		glScalef(0.025, 0.025, 0.025);
+		glRotatef(playerAngle, 0.0f, 1.0f, 0.0f);
+		model_naruto.Draw();
+		glPopMatrix();
+	}
+
 }
 
 
@@ -463,6 +599,7 @@ void updatePlayerDirection(float angle) {
 void myKeyboard(unsigned char key, int x, int y) {
 	float stepSize = 0.25;  // Movement step size
 	float newX, newZ;  // Variables to hold potential new positions
+	float newWeaponX, newWeaponZ;
 
 	if (currentView == 0) {  // Only allow movement in free camera mode
 		switch (key) {
@@ -493,15 +630,19 @@ void myKeyboard(unsigned char key, int x, int y) {
 		switch (key) {
 		case 'w':
 			playerAngle = 270;  // North
+			weaponAngle = 270;
 			break;
 		case 's':
 			playerAngle = 90;  // South
+			weaponAngle = 90;
 			break;
 		case 'a':
 			playerAngle = 0;  // West
+			weaponAngle = 0;
 			break;
 		case 'd':
 			playerAngle = 180;  // East
+			weaponAngle = 180;
 			break;
 		}
 
@@ -509,11 +650,15 @@ void myKeyboard(unsigned char key, int x, int y) {
 		if (key == 'w' || key == 's' || key == 'a' || key == 'd') {
 			newX = playerX + stepSize * sin(playerAngle * M_PI / 180.0);
 			newZ = playerZ + stepSize * cos(playerAngle * M_PI / 180.0);
+			newWeaponX = weaponX  + stepSize * sin(weaponAngle * M_PI / 180.0);
+			newWeaponZ = weaponZ + stepSize * cos(weaponAngle * M_PI / 180.0);
 
 			// Check for collision with the boundary walls (-30 to +30)
 			if (newX >= -30.0f && newX <= 30.0f && newZ >= -30.0f && newZ <= 30.0f) {
 				playerX = newX;
 				playerZ = newZ;
+				weaponX = newWeaponX;
+				weaponZ = newWeaponZ;
 			}
 		}
 
@@ -569,6 +714,43 @@ void myMotion(int x, int y)
 	glutPostRedisplay();	//Re-draw scene 
 }
 
+//void updateZombiePosition(int value) {
+//	if (!gameActive) return;
+//
+//	float speed = 0.05; // Adjust speed as needed
+//	Vector direction(playerX - zombieX, 0, playerZ - zombieZ); // Assume Y stays constant
+//	float distance = sqrt(direction.x * direction.x + direction.z * direction.z);
+//
+//	if (distance > 1.0) { // Only move if distance is greater than 1 unit to avoid clumping on the player
+//		direction.x /= distance;
+//		direction.z /= distance;
+//
+//		zombieX += direction.x * speed;
+//		zombieZ += direction.z * speed;
+//	}
+//
+//	// Redraw scene and re-register the timer
+//	glutPostRedisplay();
+//	glutTimerFunc(100, updateZombiePosition, 0); // Call this function again after 100 ms
+//}
+
+void updateGame(int value) {
+	if (!gameActive) return;
+
+	if (gameTime > 0) {
+		gameTime--;
+		printf("Time left: %d seconds\n", gameTime);
+	}
+	else {
+		gameActive = false;
+		printf("Game Over!\n");
+	}
+
+	// Register this function to be called again after 1000 ms (1 second)
+	glutTimerFunc(1000, updateGame, 0);
+}
+
+
 //=======================================================================
 // Mouse Function
 //=======================================================================
@@ -616,15 +798,17 @@ void LoadAssets()
 	// Loading Model files
 	//model_couch.Load("Models/couch/couch.3ds");
 	//model_couch2.Load("Models/couch2/couch2.3ds");
-	//model_naruto.Load("Models/naruto/naruto.3ds");
+	model_naruto.Load("Models/naruto/naruto.3ds");
 	//model_lamp.Load("Models/lamp/lamp.3ds");
 	//model_door.Load("Models/door/door.3ds");
 	//model_table.Load("Models/table/table.3ds");
 	//model_cubes.Load("Models/childCubes/cubes.3ds");
 	//model_tv.Load("Models/tv/tv.3ds");
-	model_window.Load("Models/window/window.3ds");
+	//model_window.Load("Models/window/window.3ds");
+	//model_window.Load("Models/weapon/weapon.3ds");
+	model_gun.Load("Models/gun2/gun2.3ds");
+	model_zombie.Load("Models/z/z.3ds");
 	
-
 
 	// Loading texture files
 	tex_ground.Load("Textures/floor2.bmp");
@@ -633,6 +817,49 @@ void LoadAssets()
 
 	
 }
+
+
+//=======================================================================
+// Misc
+//=======================================================================
+
+void spawnZombie(int value) {
+	// Spawn a new zombie at a random location around the edges of the playable area
+	float spawnX = (rand() % 60) - 30;
+	float spawnZ = (rand() % 60) - 30;
+	zombies.push_back(Zombie(spawnX, 0.0f, spawnZ));
+
+	if (gameActive) {
+		glutTimerFunc(10000, spawnZombie, 0); // Spawn another zombie in 10 seconds
+	}
+}
+
+void updateZombiePosition(int value) {
+	if (!gameActive) return;
+
+	const float collisionDistance = 2.0; // Define how close zombies must be to harm the player
+	const float damage = 25.0; // Amount of health reduced on collision
+
+	for (auto& zombie : zombies) {
+		zombie.updatePosition(playerX, playerZ);
+
+		// Calculate distance from the zombie to the player
+		float dx = playerX - zombie.x;
+		float dz = playerZ - zombie.z;
+		float distance = sqrt(dx * dx + dz * dz);
+
+		// Check for collision
+		if (distance < collisionDistance) {
+			playerHealth -= damage;
+			printf("Player hit! Health: %f\n", playerHealth); // Output the health to console (or handle as needed)
+		}
+	}
+
+	glutPostRedisplay();
+	glutTimerFunc(100, updateZombiePosition, 0);
+}
+
+
 
 //=======================================================================
 // Main Function
@@ -653,6 +880,10 @@ void main(int argc, char** argv)
 
 	glutDisplayFunc(myDisplay);
 
+	glutTimerFunc(100, updateZombiePosition, 0);
+	glutTimerFunc(1000, updateGame, 0);
+
+	glutTimerFunc(10000, spawnZombie, 0); // Start spawning zombies
 	glutKeyboardFunc(myKeyboard);
 
 	glutMotionFunc(myMotion);
