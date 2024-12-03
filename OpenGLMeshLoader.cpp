@@ -481,8 +481,8 @@ void myDisplay(void)
 	glPopMatrix();
 
 	glPushMatrix();
-	glTranslatef(weaponX + 2,weaponY , weaponZ);
-	glScalef(0.0035, 0.0035, 0.0035);
+	glTranslatef(weaponX + 3,weaponY+2, weaponZ+1);
+	glScalef(0.001, 0.001, 0.001);
 	glRotatef(weaponAngle, 0, 1, 0);
 	model_gun.Draw();
 	glPopMatrix();
