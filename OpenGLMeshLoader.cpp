@@ -4,6 +4,8 @@
 #include <glut.h>
 #include <math.h>
 #include <corecrt_math_defines.h>
+#include <ctime> // Include this for time 
+#include <vector>
 
 int WIDTH = 1280;
 int HEIGHT = 720;
@@ -35,9 +37,53 @@ public:
 	}
 };
 
+Vector Eye(30, 30, 20);
+Vector At(0, 0, 0);
+Vector Up(0, 2, 0);
+
+int cameraZoom = 0;
+int currentView = 0;  
+float playerX = 0.0f, playerY = 0.0f, playerZ = 0.0f;  
+float weaponX = 0.0f, weaponY = 2.0f, weaponZ = 0.0f;  
+bool firstPersonMode = false;  
+double playerAngle = 0;  
+double weaponAngle = 0;
+float wallHeight = 40.0;  
+float lastX = WIDTH / 2.0;
+float lastY = HEIGHT / 2.0;
+bool firstMouse = true;
+float yaw = -90.0f;   
+float pitch = 0.0f;
+const float sensitivity = 0.1f;
+float zombieX = -20.0f, zombieY = 0.0f, zombieZ = -20.0f; 
+float playerHealth = 100.0f;
+int gameTime = 80;  
+bool gameActive = true;
+
+
+
+// Model Variables
+Model_3DS model_lamp;
+Model_3DS model_couch;
+Model_3DS model_couch2;
+Model_3DS model_naruto;
+Model_3DS model_door;
+Model_3DS model_table;
+Model_3DS model_cubes;
+Model_3DS model_tv;
+Model_3DS model_window;
+Model_3DS model_gun;
+Model_3DS model_perk;
 Model_3DS model_zombie;
 
-#include <ctime> // Include this for time functions
+
+// Textures
+GLTexture tex_ground;
+
+
+//=======================================================================
+// Classes
+//=======================================================================
 
 class Zombie {
 public:
@@ -83,7 +129,6 @@ public:
 	}
 };
 
-
 class Bullet {
 public:
 	Vector position;
@@ -96,7 +141,7 @@ public:
 		position = Vector(startX, startY, startZ);
 		// Convert angle to radians and calculate velocity components
 		float rad = angle * M_PI / 180.0;
-		velocity = Vector(cos(rad) * 0.2, 0.0, sin(rad) * 0.2);  // Adjust speed as needed
+		velocity = Vector(cos(rad) * 20, 0.0, sin(rad) * 20);  // Adjust speed as needed
 		active = true;
 	}
 
@@ -122,66 +167,13 @@ public:
 	}
 };
 
-#include <vector>
+
 std::vector<Zombie> zombies;
 std::vector<Bullet> bullets;
 
-
-
-Vector Eye(30, 30, 20);
-Vector At(0, 0, 0);
-Vector Up(0, 2, 0);
-
-int cameraZoom = 0;
-int currentView = 0;  // Default to 0 which could be your free camera or another default view
-float playerX = 0.0f, playerY = 0.0f, playerZ = 0.0f;  // Player's position
-float weaponX = 0.0f, weaponY = 2.0f, weaponZ = 0.0f;  // Player's position
-float playerYaw = 0.0f;  // Player's yaw angle in degrees
-
-bool firstPersonMode = false;  // Initially set to false
-// Global variable
-double playerAngle = 0;  // Angle in degrees, initialized to 0
-double weaponAngle = 0;
-
-float wallHeight = 40.0;  // Height of the walls
-
-// Global variables to track mouse position and player's view direction
-float lastX = WIDTH / 2.0;
-float lastY = HEIGHT / 2.0;
-bool firstMouse = true;
-float yaw = -90.0f;   // Yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially want the player to look along the z-axis
-float pitch = 0.0f;
-const float sensitivity = 0.1f;
-
-// Define global variables
-float zombieX = -20.0f, zombieY = 0.0f, zombieZ = -20.0f; // Initial position of the zombie
-float playerHealth = 100.0f;
-
-int gameTime = 80;  // 60 seconds game timer
-bool gameActive = true;
-
-void updateGame(int value); // Forward declaration for the game update function
-
-
-// Model Variables
-Model_3DS model_lamp;
-Model_3DS model_couch;
-Model_3DS model_couch2;
-Model_3DS model_naruto;
-Model_3DS model_door;
-Model_3DS model_table;
-Model_3DS model_cubes;
-Model_3DS model_tv;
-Model_3DS model_window;
-Model_3DS model_gun;
-//Model_3DS model_zombie;
-Model_3DS model_perk;
-
-
-// Textures
-GLTexture tex_ground;
-
-
+//=======================================================================
+// Render text
+//=======================================================================
 
 void renderBitmapString(float x, float y, void* font, const char* string) {
 	char* c;
@@ -487,8 +479,6 @@ void myDisplay(void)
 	model_gun.Draw();
 	glPopMatrix();
 
-	
-
 
 	// Set up 2D orthographic projection to draw text
 	glMatrixMode(GL_PROJECTION);
@@ -519,13 +509,6 @@ void myDisplay(void)
 
 	glEnable(GL_LIGHTING);
 	glEnable(GL_DEPTH_TEST);
-
-	//glPushMatrix();
-	//glTranslatef(zombieX, zombieY + 3, zombieZ);
-	//glScalef(0.25, 0.25, 0.25);
-	//glRotatef(0, 0.0f, 1.0f, 0.0f);  // Rotate Naruto around the y-axis
-	//model_zombie.Draw();
-	//glPopMatrix();
 
 	for (auto& zombie : zombies) {
 		zombie.draw();
@@ -658,114 +641,6 @@ void switchCameraView(unsigned char key, int x, int y) {
 	glutPostRedisplay();  // Redraw the scene with the new camera settings
 }
 
-
-void fireBullet() {
-	Bullet newBullet;
-	newBullet.fire(playerX, playerY + 1, playerZ, playerAngle); // Adjust Y to match gun height
-	bullets.push_back(newBullet);
-}
-
-
-//=======================================================================
-// Keyboard Function
-//==========================================================
-void updatePlayerDirection(float angle) {
-	playerAngle = angle;  // Set player angle directly
-	if (playerAngle >= 360.0) playerAngle -= 360.0;  // Ensure the angle remains within 0-360 degrees
-	if (playerAngle < 0) playerAngle += 360.0;
-}
-
-void myKeyboard(unsigned char key, int x, int y) {
-	float stepSize = 0.25;  // Movement step size
-	float newX, newZ;  // Variables to hold potential new positions
-	float newWeaponX, newWeaponZ;
-
-	if (currentView == 0) {  // Only allow movement in free camera mode
-		switch (key) {
-		case 'u':
-			// Move forward
-			Eye.x += stepSize * sin(playerAngle * M_PI / 180.0);
-			Eye.z += stepSize * cos(playerAngle * M_PI / 180.0);
-			break;
-		case 'h':
-			// Move left
-			Eye.x -= stepSize * cos(playerAngle * M_PI / 180.0);
-			Eye.z += stepSize * sin(playerAngle * M_PI / 180.0);
-			break;
-		case 'j':
-			// Move backward
-			Eye.x -= stepSize * sin(playerAngle * M_PI / 180.0);
-			Eye.z -= stepSize * cos(playerAngle * M_PI / 180.0);
-			break;
-		case 'k':
-			// Move right
-			Eye.x += stepSize * cos(playerAngle * M_PI / 180.0);
-			Eye.z -= stepSize * sin(playerAngle * M_PI / 180.0);
-			break;
-		}
-	}
-
-		// Calculate potential new positions for the player based on key presses
-		switch (key) {
-		case 'w':
-			playerAngle = 270;  // North
-			weaponAngle = 270;
-			break;
-		case 's':
-			playerAngle = 90;  // South
-			weaponAngle = 90;
-			break;
-		case 'a':
-			playerAngle = 0;  // West
-			weaponAngle = 0;
-			break;
-		case 'd':
-			playerAngle = 180;  // East
-			weaponAngle = 180;
-			break;
-		}
-
-		// Compute new positions based on angle
-		if (key == 'w' || key == 's' || key == 'a' || key == 'd') {
-			newX = playerX + stepSize * sin(playerAngle * M_PI / 180.0);
-			newZ = playerZ + stepSize * cos(playerAngle * M_PI / 180.0);
-			newWeaponX = weaponX  + stepSize * sin(weaponAngle * M_PI / 180.0);
-			newWeaponZ = weaponZ + stepSize * cos(weaponAngle * M_PI / 180.0);
-
-			// Check for collision with the boundary walls (-30 to +30)
-			if (newX >= -30.0f && newX <= 30.0f && newZ >= -30.0f && newZ <= 30.0f) {
-				playerX = newX;
-				playerZ = newZ;
-				weaponX = newWeaponX;
-				weaponZ = newWeaponZ;
-			}
-		}
-
-		switch (key) {
-		case 'p':
-			// Toggle first-person mode
-			firstPersonMode = !firstPersonMode;
-			break;
-		case '1':
-		case '2':
-		case '3':
-		case '0':
-			if (!firstPersonMode) {  // Only switch views if not in first-person mode
-				switchCameraView(key, x, y);
-			}
-			break;
-		if (key == 'f') {  // Assuming 'f' key is for firing
-			fireBullet();
-		}	
-		case 27:  // ESC key to quit
-			exit(0);
-			break;
-		}
-
-		setupCamera();  // Update the camera setup
-		glutPostRedisplay();  // Redraw the scene with the new settings
-}
-
 //=======================================================================
 // Motion Function
 //=======================================================================
@@ -795,43 +670,6 @@ void myMotion(int x, int y)
 
 	glutPostRedisplay();	//Re-draw scene 
 }
-
-//void updateZombiePosition(int value) {
-//	if (!gameActive) return;
-//
-//	float speed = 0.05; // Adjust speed as needed
-//	Vector direction(playerX - zombieX, 0, playerZ - zombieZ); // Assume Y stays constant
-//	float distance = sqrt(direction.x * direction.x + direction.z * direction.z);
-//
-//	if (distance > 1.0) { // Only move if distance is greater than 1 unit to avoid clumping on the player
-//		direction.x /= distance;
-//		direction.z /= distance;
-//
-//		zombieX += direction.x * speed;
-//		zombieZ += direction.z * speed;
-//	}
-//
-//	// Redraw scene and re-register the timer
-//	glutPostRedisplay();
-//	glutTimerFunc(100, updateZombiePosition, 0); // Call this function again after 100 ms
-//}
-
-void updateGame(int value) {
-	if (!gameActive) return;
-
-	if (gameTime > 0) {
-		gameTime--;
-		printf("Time left: %d seconds\n", gameTime);
-	}
-	else {
-		gameActive = false;
-		printf("Game Over!\n");
-	}
-
-	// Register this function to be called again after 1000 ms (1 second)
-	glutTimerFunc(1000, updateGame, 0);
-}
-
 
 //=======================================================================
 // Mouse Function
@@ -898,27 +736,11 @@ void LoadAssets()
 	loadBMP(&tex, "Textures/blu-sky-3.bmp", true);
 
 
-	
 }
-
 
 //=======================================================================
 // Misc
 //=======================================================================
-
-
-//void updateBullets() {
-//	for (auto& bullet : bullets) {
-//		bullet.update();
-//		for (auto& zombie : zombies) {
-//			if (zombie.active && bullet.active && (zombie.position - bullet.position).length() < 1.0) {
-//				zombie.active = false; // Zombie is hit
-//				bullet.active = false; // Bullet is deactivated
-//				break; // Stop checking once a bullet hits a zombie
-//			}
-//		}
-//	}
-//}
 
 void spawnZombie(int value) {
 	// Spawn a new zombie at a random location around the edges of the playable area
@@ -956,8 +778,170 @@ void updateZombiePosition(int value) {
 	glutTimerFunc(100, updateZombiePosition, 0);
 }
 
+bool checkBulletZombieCollision() {
+	for (auto& bullet : bullets) {
+		if (!bullet.active) continue;
+		for (auto& zombie : zombies) {
+			if (!zombie.active) continue;
+			float dx = bullet.position.x - zombie.x;
+			float dy = bullet.position.y - (zombie.y + 3); // Adjust y for zombie height
+			float dz = bullet.position.z - zombie.z;
+			float distance = sqrt(dx * dx + dy * dy + dz * dz);
+			if (distance < 1.0f) { // Collision threshold, adjust as necessary
+				bullet.active = false; // Deactivate bullet
+				zombie.health -= 50; // Reduce zombie health, adjust as necessary
+				if (zombie.health <= 0) {
+					zombie.active = false; // Deactivate zombie if health is depleted
+				}
+				return true; // Collision occurred
+			}
+		}
+	}
+	return false; // No collision occurred
+}
+
+void fireBullet(float angle) {
+	Bullet newBullet;
+	newBullet.fire(playerX, playerY + 5, playerZ, angle); // Fire from player position
+	bullets.push_back(newBullet);
+}
+
+void drawBullets() {
+	for (auto& bullet : bullets) {
+		bullet.draw();
+	}
+}
+
+void updateGame(int value) {
+	if (!gameActive) return;
+
+	if (gameTime > 0) {
+		gameTime--;
+		printf("Time left: %d seconds\n", gameTime);
+	}
+	else {
+		gameActive = false;
+		printf("Game Over!\n");
+	}
+
+	for (auto& bullet : bullets) {
+		bullet.update();
+	}
+
+	// Register this function to be called again after 1000 ms (1 second)
+	glutTimerFunc(10000, updateGame, 0);
+}
 
 
+void updatePlayerDirection(float angle) {
+	playerAngle = angle;  // Set player angle directly
+	if (playerAngle >= 360.0) playerAngle -= 360.0;  // Ensure the angle remains within 0-360 degrees
+	if (playerAngle < 0) playerAngle += 360.0;
+}
+
+void fireBullet() {
+	Bullet newBullet;
+	newBullet.fire(weaponX, weaponY + 1, weaponZ, playerAngle); // Adjust Y to match gun height
+	bullets.push_back(newBullet);
+}
+
+
+//=======================================================================
+// Keyboard Function
+//==========================================================
+
+void myKeyboard(unsigned char key, int x, int y) {
+	float stepSize = 0.25;  // Movement step size
+	float newX, newZ;  // Variables to hold potential new positions
+	float newWeaponX, newWeaponZ;
+
+	if (currentView == 0) {  // Only allow movement in free camera mode
+		switch (key) {
+		case 'u':
+			// Move forward
+			Eye.x += stepSize * sin(playerAngle * M_PI / 180.0);
+			Eye.z += stepSize * cos(playerAngle * M_PI / 180.0);
+			break;
+		case 'h':
+			// Move left
+			Eye.x -= stepSize * cos(playerAngle * M_PI / 180.0);
+			Eye.z += stepSize * sin(playerAngle * M_PI / 180.0);
+			break;
+		case 'j':
+			// Move backward
+			Eye.x -= stepSize * sin(playerAngle * M_PI / 180.0);
+			Eye.z -= stepSize * cos(playerAngle * M_PI / 180.0);
+			break;
+		case 'k':
+			// Move right
+			Eye.x += stepSize * cos(playerAngle * M_PI / 180.0);
+			Eye.z -= stepSize * sin(playerAngle * M_PI / 180.0);
+			break;
+		}
+	}
+
+	// Calculate potential new positions for the player based on key presses
+	switch (key) {
+	case 'w':
+		playerAngle = 270;  // North
+		weaponAngle = 270;
+		break;
+	case 's':
+		playerAngle = 90;  // South
+		weaponAngle = 90;
+		break;
+	case 'a':
+		playerAngle = 0;  // West
+		weaponAngle = 0;
+		break;
+	case 'd':
+		playerAngle = 180;  // East
+		weaponAngle = 180;
+		break;
+	}
+
+	// Compute new positions based on angle
+	if (key == 'w' || key == 's' || key == 'a' || key == 'd') {
+		newX = playerX + stepSize * sin(playerAngle * M_PI / 180.0);
+		newZ = playerZ + stepSize * cos(playerAngle * M_PI / 180.0);
+		newWeaponX = weaponX + stepSize * sin(weaponAngle * M_PI / 180.0);
+		newWeaponZ = weaponZ + stepSize * cos(weaponAngle * M_PI / 180.0);
+
+		// Check for collision with the boundary walls (-30 to +30)
+		if (newX >= -30.0f && newX <= 30.0f && newZ >= -30.0f && newZ <= 30.0f) {
+			playerX = newX;
+			playerZ = newZ;
+			weaponX = newWeaponX;
+			weaponZ = newWeaponZ;
+		}
+	}
+
+	switch (key) {
+	case 'p':
+		// Toggle first-person mode
+		firstPersonMode = !firstPersonMode;
+		break;
+	case '1':
+	case '2':
+	case '3':
+	case '0':
+		if (!firstPersonMode) {  // Only switch views if not in first-person mode
+			switchCameraView(key, x, y);
+		}
+		break;
+
+	case 27:  // ESC key to quit
+		exit(0);
+		break;
+	}
+
+	if (key == 'f') {  // Assuming 'f' key is for firing
+		fireBullet();
+	}
+
+	setupCamera();  // Update the camera setup
+	glutPostRedisplay();  // Redraw the scene with the new settings
+}
 //=======================================================================
 // Main Function
 //=======================================================================
