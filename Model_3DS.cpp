@@ -234,31 +234,7 @@ void Model_3DS::Load(char *name)
 	totalFaces = 0;
 	totalVerts = 0;
 
-	for (int i = 0; i < numObjects; i ++)
-	{
-		totalFaces += Objects[i].numFaces/3;
-		totalVerts += Objects[i].numVerts;
-	}
 
-	// If the object doesn't have any texcoords generate some
-	for (int k = 0; k < numObjects; k++)
-	{
-		if (Objects[k].numTexCoords == 0)
-		{
-			// Set the number of texture coords
-			Objects[k].numTexCoords = Objects[k].numVerts;
-
-			// Allocate an array to hold the texture coordinates
-			Objects[k].TexCoords = new GLfloat[Objects[k].numTexCoords * 20];
-
-			// Make some texture coords
-			for (int m = 0; m < Objects[k].numTexCoords; m++)
-			{
-				Objects[k].TexCoords[2*m] = Objects[k].Vertexes[3*m];
-				Objects[k].TexCoords[2*m+1] = Objects[k].Vertexes[3*m+1];
-			}
-		}
-	}
 
 	// Let's build simple colored textures for the materials w/o a texture
 	for (int j = 0; j < numMaterials; j++)

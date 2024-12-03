@@ -83,8 +83,49 @@ public:
 	}
 };
 
+
+class Bullet {
+public:
+	Vector position;
+	Vector velocity;
+	bool active;
+
+	Bullet() : position(0.0, 0.0, 0.0), velocity(0.0, 0.0, 0.0), active(false) {}
+
+	void fire(float startX, float startY, float startZ, float angle) {
+		position = Vector(startX, startY, startZ);
+		// Convert angle to radians and calculate velocity components
+		float rad = angle * M_PI / 180.0;
+		velocity = Vector(cos(rad) * 0.2, 0.0, sin(rad) * 0.2);  // Adjust speed as needed
+		active = true;
+	}
+
+	void update() {
+		if (!active) return;
+		position.x += velocity.x;
+		position.y += velocity.y;
+		position.z += velocity.z;
+
+		// Optional: Add boundaries to deactivate bullet
+		if (position.x < -30 || position.x > 30 || position.z < -30 || position.z > 30) {
+			active = false;
+		}
+	}
+
+	void draw() {
+		if (!active) return;
+		glPushMatrix();
+		glColor3f(1.0, 0.0, 0.0); // Red color for visibility
+		glTranslatef(position.x, position.y, position.z);
+		glutSolidSphere(0.1, 10, 10); // Small sphere for bullet
+		glPopMatrix();
+	}
+};
+
 #include <vector>
 std::vector<Zombie> zombies;
+std::vector<Bullet> bullets;
+
 
 
 Vector Eye(30, 30, 20);
@@ -134,6 +175,7 @@ Model_3DS model_tv;
 Model_3DS model_window;
 Model_3DS model_gun;
 //Model_3DS model_zombie;
+Model_3DS model_perk;
 
 
 // Textures
@@ -343,7 +385,6 @@ void myDisplay(void)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-
 	GLfloat lightIntensity[] = { 0.7, 0.7, 0.7, 1.0f };
 	GLfloat lightPosition[] = { 0.0f, 100.0f, 0.0f, 0.0f };
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
@@ -446,6 +487,9 @@ void myDisplay(void)
 	model_gun.Draw();
 	glPopMatrix();
 
+	
+
+
 	// Set up 2D orthographic projection to draw text
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -486,6 +530,19 @@ void myDisplay(void)
 	for (auto& zombie : zombies) {
 		zombie.draw();
 	}
+
+	for (auto& bullet : bullets) {
+		bullet.draw();
+	}
+
+	glPushMatrix();
+	glTranslatef(28.0, 2.5, -15.0);
+	glScalef(0.5, 0.5, 0.5);
+	glRotatef(180, 0, 1, 0);
+	model_perk.Draw();
+	glPopMatrix();
+
+
 
 
 
@@ -601,6 +658,14 @@ void switchCameraView(unsigned char key, int x, int y) {
 	glutPostRedisplay();  // Redraw the scene with the new camera settings
 }
 
+
+void fireBullet() {
+	Bullet newBullet;
+	newBullet.fire(playerX, playerY + 1, playerZ, playerAngle); // Adjust Y to match gun height
+	bullets.push_back(newBullet);
+}
+
+
 //=======================================================================
 // Keyboard Function
 //==========================================================
@@ -689,6 +754,9 @@ void myKeyboard(unsigned char key, int x, int y) {
 				switchCameraView(key, x, y);
 			}
 			break;
+		if (key == 'f') {  // Assuming 'f' key is for firing
+			fireBullet();
+		}	
 		case 27:  // ESC key to quit
 			exit(0);
 			break;
@@ -810,19 +878,20 @@ void myReshape(int w, int h)
 void LoadAssets()
 {
 	// Loading Model files
-	//model_couch.Load("Models/couch/couch.3ds");
-	//model_couch2.Load("Models/couch2/couch2.3ds");
+	model_couch.Load("Models/couch/couch.3ds");
+	model_couch2.Load("Models/couch2/couch2.3ds");
 	model_naruto.Load("Models/naruto/naruto.3ds");
-	//model_lamp.Load("Models/lamp/lamp.3ds");
-	//model_door.Load("Models/door/door.3ds");
-	//model_table.Load("Models/table/table.3ds");
-	//model_cubes.Load("Models/childCubes/cubes.3ds");
-	//model_tv.Load("Models/tv/tv.3ds");
-	//model_window.Load("Models/window/window.3ds");
-	//model_window.Load("Models/weapon/weapon.3ds");
+	model_lamp.Load("Models/lamp/lamp.3ds");
+	model_door.Load("Models/door/door.3ds");
+	model_table.Load("Models/table/table.3ds");
+	model_cubes.Load("Models/childCubes/cubes.3ds");
+	model_tv.Load("Models/tv/tv.3ds");
+	model_window.Load("Models/window/window.3ds");
+	model_window.Load("Models/weapon/weapon.3ds");
 	model_gun.Load("Models/gun2/gun2.3ds");
 	model_zombie.Load("Models/z/z.3ds");
-	
+	model_perk.Load("Models/perkMachine/perkmachine2.3ds");
+
 
 	// Loading texture files
 	tex_ground.Load("Textures/floor2.bmp");
@@ -837,6 +906,20 @@ void LoadAssets()
 // Misc
 //=======================================================================
 
+
+//void updateBullets() {
+//	for (auto& bullet : bullets) {
+//		bullet.update();
+//		for (auto& zombie : zombies) {
+//			if (zombie.active && bullet.active && (zombie.position - bullet.position).length() < 1.0) {
+//				zombie.active = false; // Zombie is hit
+//				bullet.active = false; // Bullet is deactivated
+//				break; // Stop checking once a bullet hits a zombie
+//			}
+//		}
+//	}
+//}
+
 void spawnZombie(int value) {
 	// Spawn a new zombie at a random location around the edges of the playable area
 	float spawnX = (rand() % 60) - 30;
@@ -847,6 +930,7 @@ void spawnZombie(int value) {
 		glutTimerFunc(10000, spawnZombie, 0); // Spawn another zombie in 10 seconds
 	}
 }
+
 void updateZombiePosition(int value) {
 	if (!gameActive) return;
 
@@ -871,7 +955,6 @@ void updateZombiePosition(int value) {
 	glutPostRedisplay();
 	glutTimerFunc(100, updateZombiePosition, 0);
 }
-
 
 
 
