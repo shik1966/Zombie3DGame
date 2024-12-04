@@ -104,6 +104,11 @@ Model_3DS model_window;
 Model_3DS model_gun;
 Model_3DS model_perk;
 Model_3DS model_zombie;
+Model_3DS model_gasStation;
+Model_3DS model_fence;
+Model_3DS model_fuelPump;
+
+
 
 
 // Textures
@@ -128,8 +133,8 @@ public:
 	void draw() {
 		if (!active) return;
 		glPushMatrix();
-		glTranslatef(x, y + 3, z);
-		glScalef(0.25, 0.25, 0.25);
+		glTranslatef(x, y, z);
+		glScalef(0.05, 0.05, 0.05);
 		model_zombie.Draw();
 		glPopMatrix();
 	}
@@ -221,6 +226,8 @@ CubesModel cubes(-15.0, 0.0, -15.0); // Initialize cubes model at a specific pos
 
 std::vector<Zombie> zombies;
 std::vector<Bullet> bullets;
+
+
 
 //=======================================================================
 // Render text
@@ -535,6 +542,8 @@ void myDisplay(void)
 		glPopMatrix();
 	}
 
+
+
 	// Draw cubes
 	//glPushMatrix();
 	//glTranslatef(-15.0, 0.0, -15.0);
@@ -606,6 +615,21 @@ void myDisplay(void)
 		glPopMatrix();
 	}
 
+
+	glPushMatrix();
+	glTranslatef(0.0, 5.0, 5.0);
+	glScalef(0.05, 0.05, 0.05);
+	glRotatef(0.0f, 1, 0, 0);
+	//model_fuelPump.Draw();
+	glPopMatrix();
+
+
+	glPushMatrix();
+	glTranslatef(0.0, 5.0, 5.0);
+	glScalef(0.05, 0.05, 0.05);
+	glRotatef(0.0f, 1, 0, 0);
+	//model_gasStation.Draw();
+	glPopMatrix();
 
 	// Set up 2D orthographic projection to draw text
 	glMatrixMode(GL_PROJECTION);
@@ -850,9 +874,11 @@ void LoadAssets()
 	model_tv.Load("Models/tv/tv.3ds");
 	model_window.Load("Models/window/window.3ds");
 	model_gun.Load("Models/gun2/gun2.3ds");
-	model_zombie.Load("Models/z/z.3ds");
+	model_zombie.Load("Models/zombie/zombie.3ds");
 	model_perk.Load("Models/perkMachine/perkmachine2.3ds");
-
+	model_fuelPump.Load("Models/fuelPump/fuelPump.3ds");
+	model_fence.Load("Models/fence/fence.3ds");
+	model_gasStation.Load("Models/gasStation/gasStation.3ds");
 
 	// Loading texture files
 	tex_ground.Load("Textures/floor2.bmp");
@@ -1033,7 +1059,6 @@ void regenerateHealth(int value) {
 	glutTimerFunc(5000, regenerateHealth, 0);  // Re-register timer every 5 seconds
 }
 
-
 void updateGame(int value) {
 	if (!gameActive) return;
 	// Update each bullet
@@ -1054,6 +1079,8 @@ void updateGame(int value) {
 	// Re-register the update function
 	glutTimerFunc(1000, updateGame, 0);
 }
+
+
 
 //=======================================================================
 // Keyboard Function
