@@ -107,7 +107,8 @@ Model_3DS model_zombie;
 Model_3DS model_gasStation;
 Model_3DS model_fence;
 Model_3DS model_fuelPump;
-
+Model_3DS model_car;
+Model_3DS model_gun3;
 
 
 
@@ -631,6 +632,21 @@ void myDisplay(void)
 	//model_gasStation.Draw();
 	glPopMatrix();
 
+	glPushMatrix();
+	glTranslatef(0.0, 5.0, 5.0);
+	glScalef(1, 1, 1);
+	glRotatef(0.0f, 1, 0, 0);
+	//model_car.Draw();
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(0.0, 5.0, 5.0);
+	glScalef(1, 1, 1);
+	glRotatef(0.0f, 1, 0, 0);
+	model_gun3.Draw();
+	glPopMatrix();
+
+
 	// Set up 2D orthographic projection to draw text
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -879,6 +895,8 @@ void LoadAssets()
 	model_fuelPump.Load("Models/fuelPump/fuelPump.3ds");
 	model_fence.Load("Models/fence/fence.3ds");
 	model_gasStation.Load("Models/gasStation/gasStation.3ds");
+	model_car.Load("Models/car/car.3ds");
+//model_gun3.Load("Models/gun3/gun3.3ds");
 
 	// Loading texture files
 	tex_ground.Load("Textures/floor2.bmp");
