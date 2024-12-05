@@ -84,6 +84,8 @@ float initialPlayerY = playerY;  // Set this at the start of the game or when th
 int countdownTime = 60;  // Start the timer from 60 seconds
 bool timerActive = true;  // State to control timer activation
 int playerScore = 0;
+float thirdPersonDistance = 12.0f; // Distance behind the player
+float thirdPersonHeight = 7.0f;
 
 int playerMaxHealth = 100;  // Initial health cap
 bool perkMachineActive = true;  // State of the perk machine
@@ -864,6 +866,15 @@ void setupCamera() {
 		glPopMatrix();
 
 	}
+	else if (currentView == 4) { // Third-person view
+		// Calculate the camera position based on the player's position and angle
+		float camX = playerX - thirdPersonDistance * sin(playerAngle * M_PI / 180.0);
+		float camY = playerY + thirdPersonHeight;
+		float camZ = playerZ - thirdPersonDistance * cos(playerAngle * M_PI / 180.0);
+
+		// Set the camera to look at the player
+		gluLookAt(camX, camY, camZ, playerX, playerY + 2, playerZ, 0.0, 1.0, 0.0);
+	}
 
 	else {
 		// Other camera views
@@ -915,7 +926,11 @@ void switchCameraView(unsigned char key, int x, int y) {
 	case '3':
 		currentView = 3;  // Front View
 		break;
+	case '4':
+		currentView = 4; // Third-Person View
+		break;
 	case '0':
+
 		currentView = 0;  // Free Camera
 		break;
 	default:
@@ -1348,6 +1363,7 @@ void myKeyboard(unsigned char key, int x, int y) {
 	case '1':
 	case '2':
 	case '3':
+	case '4':
 	case '0':
 		if (!firstPersonMode) {  // Only switch views if not in first-person mode
 			switchCameraView(key, x, y);
