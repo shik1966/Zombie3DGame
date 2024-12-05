@@ -641,7 +641,7 @@ void myDisplay(void)
 
 	glPushMatrix();
 	glTranslatef(0.0, 5.0, 5.0);
-	glScalef(1, 1, 1);
+	glScalef(0.5, 0.5, 0.5);
 	glRotatef(0.0f, 1, 0, 0);
 	model_gun3.Draw();
 	glPopMatrix();
@@ -896,7 +896,7 @@ void LoadAssets()
 	model_fence.Load("Models/fence/fence.3ds");
 	model_gasStation.Load("Models/gasStation/gasStation.3ds");
 	model_car.Load("Models/car/car.3ds");
-//model_gun3.Load("Models/gun3/gun3.3ds");
+	model_gun3.Load("Models/gun3/gun3.3ds");
 
 	// Loading texture files
 	tex_ground.Load("Textures/floor2.bmp");
