@@ -117,7 +117,7 @@ Model_3DS model_gun3;
 
 // Textures
 GLTexture tex_ground;
-
+GLTexture tex_walls;
 
 //=======================================================================
 // Classes
@@ -410,7 +410,7 @@ void RenderGround()
 
 	glEnable(GL_TEXTURE_2D);	// Enable 2D texturing
 
-	glBindTexture(GL_TEXTURE_2D, tex_ground.texture[0]);	// Bind the ground texture
+	glBindTexture(GL_TEXTURE_2D, tex_walls.texture[0]);	// Bind the ground texture
 
 	glPushMatrix();
 	glBegin(GL_QUADS);
@@ -1019,7 +1019,8 @@ void LoadAssets()
 	model_gun3.Load("Models/gun3/gun3.3ds");
 
 	// Loading texture files
-	tex_ground.Load("Textures/floor2.bmp");
+	tex_ground.Load("Textures/floor4.bmp");
+	tex_walls.Load("Textures/floor2.bmp");
 	loadBMP(&tex, "Textures/blu-sky-3.bmp", true);
 
 
