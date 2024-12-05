@@ -948,7 +948,7 @@ void switchCameraView(unsigned char key, int x, int y) {
 	case '3':
 		currentView = 3;  // Front View
 		break;
-	case '4':
+	case 't':
 		currentView = 4; // Third-Person View
 		break;
 	case '0':
@@ -1361,7 +1361,7 @@ void myKeyboard(unsigned char key, int x, int y) {
 		}
 
 		float distanceToTable = sqrt(pow(playerX - tablePosition.x, 2) + pow(playerZ - tablePosition.z, 2));
-		if (key == 'E' && distanceToTable < 5.0 && !tableInteracted) {
+		if (key == 'e' && distanceToTable < 5.0 && !tableInteracted) {
 			playerScore += 500;  // Increase score by 500
 			tableInteracted = true;  // Prevent further interaction
 			printf("Score: %d\n", playerScore);  // Optional: Output score to console
@@ -1387,7 +1387,7 @@ void myKeyboard(unsigned char key, int x, int y) {
 	case '1':
 	case '2':
 	case '3':
-	case '4':
+	case 't':
 	case '0':
 		if (!firstPersonMode) {  // Only switch views if not in first-person mode
 			switchCameraView(key, x, y);
