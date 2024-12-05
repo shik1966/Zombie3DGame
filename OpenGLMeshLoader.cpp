@@ -6,6 +6,7 @@
 #include <corecrt_math_defines.h>
 #include <ctime> // Include this for time 
 #include <vector>
+#include <iostream>
 
 int WIDTH = 1280;
 int HEIGHT = 720;
@@ -76,7 +77,7 @@ bool windowLightActive = false;  // Control activation of the window light
 GLfloat windowLightPos[4] = { windowPosition.x, windowPosition.y + 2.0f, windowPosition.z, 1.0f };  // Window light position
 float gravity = 0.25f;  // Gravity pulling the player down each frame
 bool isJumping = false;  // State to check if the player is currently jumping
-float jumpSpeed = 5.0f;  // Initial speed at which the player moves up
+float jumpSpeed = 2.0f;  // Initial speed at which the player moves up
 float playerVelocityY = 0.0f;  // Player's vertical velocity
 float initialPlayerY = playerY;  // Set this at the start of the game or when the player is positioned
 
@@ -90,6 +91,8 @@ Vector perkMachinePosition = Vector(28.0, 2.5, -15.0);  // Position of the perk 
 
 Vector tablePosition(-26.0, 0.0, -28.0);  // Position of the table
 bool tableInteracted = false;  // To ensure score is added only once
+bool scene1 = true;  // Scene 1 is active by default
+bool scene2 = false;  // Scene 2 is inactive by default
 
 // Model Variables
 Model_3DS model_lamp;
@@ -162,7 +165,21 @@ public:
 		}
 		return false;
 	}
+
+	void takeDamage(float damage) {
+		health -= damage;
+		if (health <= 0) {
+			active = false;
+		}
+	}
 };
+std::vector<Zombie> zombies;
+
+Vector calculateDirection(float yaw, float pitch) {
+	float radYaw = yaw * M_PI / 180.0;
+	float radPitch = pitch * M_PI / 180.0;
+	return Vector(cos(radYaw) * cos(radPitch), sin(radPitch), sin(radYaw) * cos(radPitch));
+}
 
 class Bullet {
 public:
@@ -172,22 +189,52 @@ public:
 
 	Bullet() : position(0.0, 0.0, 0.0), velocity(0.0, 0.0, 0.0), active(false) {}
 
-	void fire(float startX, float startY, float startZ, float angle) {
+	void fire(float startX, float startY, float startZ, float yaw, float pitch) {
 		position = Vector(startX, startY, startZ);
-		// Convert angle to radians and calculate velocity components
-		float rad = angle * M_PI / 180.0;
-		velocity = Vector(cos(rad) * 20, 0.0, sin(rad) * 20);  // Adjust speed as needed
+		Vector direction = calculateDirection(yaw, pitch);
+		velocity = Vector(direction.x * 20, direction.y * 20, direction.z * 20);  // Adjust speed as needed
 		active = true;
+		std::cout << "Bullet fired from (" << startX << ", " << startY << ", " << startZ << ") with velocity (" << velocity.x << ", " << velocity.y << ", " << velocity.z << ")" << std::endl;
 	}
 
-	void update();
+	bool checkCollision(const Zombie& zombie) {
+		float distance = sqrt(pow(position.x - zombie.x, 2) + pow(position.y - zombie.y, 2) + pow(position.z - zombie.z, 2));
+		std::cout << "Checking collision: Bullet at (" << position.x << ", " << position.y << ", " << position.z << "), Zombie at (" << zombie.x << ", " << zombie.y << ", " << zombie.z << "), Distance: " << distance << std::endl;
+		return distance < 8.0f; // Adjust collision radius as needed
+	}
+
+	void update() {
+		if (!active) return;
+		position.x += velocity.x * 0.1f; // Adjust speed as needed
+		position.y += velocity.y * 0.1f; // Adjust speed as needed
+		position.z += velocity.z * 0.1f; // Adjust speed as needed
+
+		std::cout << "Bullet position updated to (" << position.x << ", " << position.y << ", " << position.z << ")" << std::endl;
+
+		// Check for collision with zombies
+		for (Zombie& zombie : zombies) {
+			if (zombie.active && checkCollision(zombie)) {
+				zombie.takeDamage(50.0f); // Apply damage
+				active = false; // Deactivate bullet
+				playerScore += 10; // Increase score by 10
+				std::cout << "Bullet hit zombie at (" << zombie.x << ", " << zombie.y << ", " << zombie.z << "). Score: " << playerScore << std::endl;
+				break;
+			}
+		}
+
+		// Deactivate bullet if it goes out of bounds (example condition)
+		if (position.x > 100 || position.x < -100 || position.y > 100 || position.y < -100 || position.z > 100 || position.z < -100) {
+			active = false;
+			std::cout << "Bullet went out of bounds and is deactivated" << std::endl;
+		}
+	}
 
 	void draw() {
 		if (!active) return;
 		glPushMatrix();
 		glColor3f(1.0, 0.0, 0.0); // Red color for visibility
 		glTranslatef(position.x, position.y, position.z);
-		glutSolidSphere(0.1, 10, 10); // Small sphere for bullet
+		glutSolidSphere(0.3, 10, 10); // Small sphere for bullet
 		glPopMatrix();
 	}
 };
@@ -225,7 +272,7 @@ public:
 CubesModel cubes(-15.0, 0.0, -15.0); // Initialize cubes model at a specific position
 
 
-std::vector<Zombie> zombies;
+
 std::vector<Bullet> bullets;
 
 
@@ -450,6 +497,20 @@ void RenderWalls()
 	glColor3f(1, 1, 1);  // Reset the color to default after rendering
 }
 
+void updateBullets() {
+	for (auto& bullet : bullets) {
+		if (bullet.active) {
+			bullet.position.x += bullet.velocity.x * 0.2f; // Adjust speed as needed
+			bullet.position.z += bullet.velocity.z * 0.2f; // Adjust speed as needed
+
+			// Deactivate bullet if it goes out of bounds (example condition)
+			if (bullet.position.x > 100 || bullet.position.x < -100 || bullet.position.z > 100 || bullet.position.z < -100) {
+				bullet.active = false;
+			}
+		}
+	}
+}
+
 //=======================================================================
 // Display Function
 //=======================================================================
@@ -465,178 +526,231 @@ void myDisplay(void)
 
 	// Draw Ground
 	RenderGround();
-	// Draw Walls
-	RenderWalls();
-
-	// Draw Tree Model
-	glPushMatrix();
-	glTranslatef(10, 0, 0);
-	glScalef(0.7, 0.7, 0.7);
-	//model_tree.Draw();
-	glPopMatrix();
-
-	// Draw house Model
-	glPushMatrix();
-	glRotatef(90.f, 1, 0, 0);
-	//model_house.Draw();
-	glPopMatrix();
-
-
-	// Draw couch
-	glPushMatrix();
-	glTranslatef(27.0, 1.0, -28.0);
-	glScalef(0.005, 0.005, 0.005);
-	glRotatef(0.0f, 1, 0, 0);
-	model_couch.Draw();
-	glPopMatrix();
-
-	// Draw couch2
-	glPushMatrix();
-	glTranslatef(10.0, 0.0, -30.0);
-	glScalef(5, 5, 5);
-	glRotatef(0.0f, 1, 0, 0);
-	model_couch2.Draw();
-	glPopMatrix();
-
-	if (lampIsOn) {
-		lampPosition.x = playerX;  // Set lamp's X to player's X
-		lampPosition.z = playerZ;  // Set lamp's Z to player's Z
-
-		// Set light properties for moving lamp
-		GLfloat light_position[] = { lampPosition.x, lampPosition.y + 5.0f, lampPosition.z, 1.0f };
-		glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-	}
-
-	glPushMatrix();
-	glTranslatef(lampPosition.x, lampPosition.y, lampPosition.z);
-	glScalef(0.005, 0.005, 0.005);
-	model_lamp.Draw();
-	glPopMatrix();
-
 	// Draw naruto
 	glPushMatrix();
-	glTranslatef(playerX, playerY, playerZ);
-	glScalef(0.03, 0.03, 0.03);
-	glRotatef(playerAngle, 0.0f, 1.0f, 0.0f);  
-	model_naruto.Draw();
-	glPopMatrix();
-
-
-	glPushMatrix();
-	glTranslatef(doorPosition.x, doorPosition.y, doorPosition.z);
-	glScalef(0.1, 0.1, 0.1);
-	if (doorIsOpen) {
-		glRotatef(doorAngle, 0, 1, 0); // Rotate the door around the Y-axis
-		glTranslatef(-1, 0, 0); // Translate to simulate door swinging open; adjust as needed
-	}
-	model_door.Draw();
-	glPopMatrix();
-
-
-	// Draw table
-	if (!tableInteracted) {
-		glPushMatrix();
-		glTranslatef(tablePosition.x, 0.0, tablePosition.z);
-		glScalef(0.05, 0.05, 0.05);
-		glRotatef(0.0f, 1, 0, 0);
-		model_table.Draw();
-		glPopMatrix();
-	}
-
-
-
-	// Draw cubes
-	//glPushMatrix();
-	//glTranslatef(-15.0, 0.0, -15.0);
-	//glScalef(1, 1, 1);
-	//glRotatef(0.0f, 1, 0, 0);
-	//model_cubes.Draw();
-	//glPopMatrix();
-
-	cubes.draw(); // Draw the cubes model
-
-	glPushMatrix();
-	glTranslatef(28.0, 0.0, 0.0);
-	glScalef(0.005, 0.005, 0.005);
-	glRotatef(0.0f, 1, 0, 0);
-	model_tv.Draw();
-	glPopMatrix();
-
-	glPushMatrix();
-	glTranslatef(0.0, 5.0,30.0);
-	glScalef(0.005, 0.005, 0.005);
-	glRotatef(0.0f, 1, 0, 0);
-	model_window.Draw();
-	glPopMatrix();
-
-	// Setup light positions and intensity...
-	if (windowLightActive) {
-		glEnable(GL_LIGHT1);
-		GLfloat light_position[] = { windowPosition.x, windowPosition.y, windowPosition.z, 1.0f };
-		glLightfv(GL_LIGHT1, GL_POSITION, light_position);
-	}
-	else {
-		glDisable(GL_LIGHT1);
-	}
-
-	// Draw the window with updated Y position
-	glPushMatrix();
-	glTranslatef(windowPosition.x, windowPosition.y, windowPosition.z);
-	glScalef(0.005, 0.005, 0.005);
-	model_window.Draw();
-	glPopMatrix();
-
-	glPushMatrix();
-	float currentWeaponY = weaponY;
-	if (isRecoiling) {
-		currentWeaponY += recoilAmount;  // Move the weapon up
-		recoilAmount -= recoilSpeed;  // Reduce the recoil amount to come back to the original position
-		if (recoilAmount <= 0) {
-			isRecoiling = false;
-			recoilAmount = 0;  // Ensure the recoil amount doesn't go negative
+	//handle jump case
+	if (isJumping) {
+		playerY += playerVelocityY;  // Move the player up or down
+		playerVelocityY -= gravity;  // Apply gravity to the player
+		if (playerY <= initialPlayerY) {  // Check if the player has landed
+			playerY = initialPlayerY;  // Reset the player to the initial position
+			playerVelocityY = 0.0f;  // Reset the player's velocity
+			isJumping = false;  // Set jumping state to false
 		}
 	}
-	glTranslatef(weaponX, currentWeaponY, weaponZ);  // Use the modified Y-coordinate
-	glScalef(0.0035, 0.0035, 0.0035);  // Scaling to adjust the weapon size
-	glRotatef(weaponAngle, 0, 1, 0);  // Rotate according to the current weapon angle
-	model_gun.Draw();
+	glTranslatef(playerX, playerY, playerZ);
+	glScalef(0.03, 0.03, 0.03);
+	glRotatef(playerAngle, 0.0f, 1.0f, 0.0f);
+	model_naruto.Draw();
 	glPopMatrix();
-
-	//glScalef(0.0035, 0.0035, 0.0035);
-	//glRotatef(weaponAngle, 0, 1, 0);
-	//model_gun.Draw();
-	//glPopMatrix();
-
-	if(perkMachineActive) {
+	
+	if (scene1) {
+		// Draw Walls
+		RenderWalls();
+		// Draw Tree Model
 		glPushMatrix();
-		glTranslatef(perkMachinePosition.x, perkMachinePosition.y, perkMachinePosition.z);
-		glScalef(0.5, 0.5, 0.5);  // Scale as needed
-		glRotatef(180, 0, 1, 0);  // Adjust orientation as needed
-		model_perk.Draw();
+		glTranslatef(10, 0, 0);
+		glScalef(0.7, 0.7, 0.7);
+		//model_tree.Draw();
 		glPopMatrix();
+
+		// Draw house Model
+		glPushMatrix();
+		glRotatef(90.f, 1, 0, 0);
+		//model_house.Draw();
+		glPopMatrix();
+
+
+		// Draw couch
+		glPushMatrix();
+		glTranslatef(27.0, 1.0, -28.0);
+		glScalef(0.005, 0.005, 0.005);
+		glRotatef(0.0f, 1, 0, 0);
+		model_couch.Draw();
+		glPopMatrix();
+
+		// Draw couch2
+		glPushMatrix();
+		glTranslatef(10.0, 0.0, -30.0);
+		glScalef(5, 5, 5);
+		glRotatef(0.0f, 1, 0, 0);
+		model_couch2.Draw();
+		glPopMatrix();
+
+		if (lampIsOn) {
+			lampPosition.x = playerX;  // Set lamp's X to player's X
+			lampPosition.z = playerZ;  // Set lamp's Z to player's Z
+
+			// Set light properties for moving lamp
+			GLfloat light_position[] = { lampPosition.x, lampPosition.y + 5.0f, lampPosition.z, 1.0f };
+			glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+		}
+
+		glPushMatrix();
+		glTranslatef(lampPosition.x, lampPosition.y, lampPosition.z);
+		glScalef(0.005, 0.005, 0.005);
+		model_lamp.Draw();
+		glPopMatrix();
+
+
+		glPushMatrix();
+		glTranslatef(doorPosition.x, doorPosition.y, doorPosition.z);
+		glScalef(0.1, 0.1, 0.1);
+		if (doorIsOpen) {
+			glRotatef(doorAngle, 0, 1, 0); // Rotate the door around the Y-axis
+			glTranslatef(-1, 0, 0); // Translate to simulate door swinging open; adjust as needed
+		}
+		model_door.Draw();
+		glPopMatrix();
+
+
+		// Draw table
+		if (!tableInteracted) {
+			glPushMatrix();
+			glTranslatef(tablePosition.x, 0.0, tablePosition.z);
+			glScalef(0.05, 0.05, 0.05);
+			glRotatef(0.0f, 1, 0, 0);
+			model_table.Draw();
+			glPopMatrix();
+		}
+
+
+
+		// Draw cubes
+		//glPushMatrix();
+		//glTranslatef(-15.0, 0.0, -15.0);
+		//glScalef(1, 1, 1);
+		//glRotatef(0.0f, 1, 0, 0);
+		//model_cubes.Draw();
+		//glPopMatrix();
+
+		cubes.draw(); // Draw the cubes model
+
+		glPushMatrix();
+		glTranslatef(28.0, 0.0, 0.0);
+		glScalef(0.005, 0.005, 0.005);
+		glRotatef(0.0f, 1, 0, 0);
+		model_tv.Draw();
+		glPopMatrix();
+
+		glPushMatrix();
+		glTranslatef(0.0, 5.0, 30.0);
+		glScalef(0.005, 0.005, 0.005);
+		glRotatef(0.0f, 1, 0, 0);
+		model_window.Draw();
+		glPopMatrix();
+
+		// Setup light positions and intensity...
+		if (windowLightActive) {
+			glEnable(GL_LIGHT1);
+			GLfloat light_position[] = { windowPosition.x, windowPosition.y, windowPosition.z, 1.0f };
+			glLightfv(GL_LIGHT1, GL_POSITION, light_position);
+		}
+		else {
+			glDisable(GL_LIGHT1);
+		}
+
+		// Draw the window with updated Y position
+		glPushMatrix();
+		glTranslatef(windowPosition.x, windowPosition.y, windowPosition.z);
+		glScalef(0.005, 0.005, 0.005);
+		model_window.Draw();
+		glPopMatrix();
+
+		glPushMatrix();
+		//handle jump case weapon jumps with player
+		if (isJumping) {
+			weaponY +=playerVelocityY;  // Move the weapon up or down
+		}
+		//reset to poistion before jumpiing after jumping
+		else {
+			weaponY = 2.0f;
+		}
+
+		float currentWeaponY = weaponY;
+		if (isRecoiling) {
+			currentWeaponY += recoilAmount;  // Move the weapon up
+			recoilAmount -= recoilSpeed;  // Reduce the recoil amount to come back to the original position
+			if (recoilAmount <= 0) {
+				isRecoiling = false;
+				recoilAmount = 0;  // Ensure the recoil amount doesn't go negative
+			}
+		}
+		glTranslatef(weaponX, currentWeaponY, weaponZ);  // Use the modified Y-coordinate
+		glScalef(0.0035, 0.0035, 0.0035);  // Scaling to adjust the weapon size
+		glRotatef(weaponAngle, 0, 1, 0);  // Rotate according to the current weapon angle
+		model_gun.Draw();
+		glPopMatrix();
+
+		//glScalef(0.0035, 0.0035, 0.0035);
+		//glRotatef(weaponAngle, 0, 1, 0);
+		//model_gun.Draw();
+		//glPopMatrix();
+
+		if (perkMachineActive) {
+			glPushMatrix();
+			glTranslatef(perkMachinePosition.x, perkMachinePosition.y, perkMachinePosition.z);
+			glScalef(0.5, 0.5, 0.5);  // Scale as needed
+			glRotatef(180, 0, 1, 0);  // Adjust orientation as needed
+			model_perk.Draw();
+			glPopMatrix();
+		}
+		for (auto& zombie : zombies) {
+			zombie.draw();
+		}
 	}
 
+	else if (scene2) {
+		// Draw fence
+		for (int i = 0; i < 9; ++i) {
+			glPushMatrix();
+			glTranslatef(-30.0 , 3.0, -20.0 + i * 5.0); // Adjust the translation for each fence
+			glScalef(0.001, 0.001, 0.001);
+			model_fence.Draw();
+			glPopMatrix();
+		}
+		// Loop to draw multiple fences on the second side
+		for (int i = 0; i < 9; ++i) {
+			glPushMatrix();
+			glTranslatef(-20.0 + i * 5.0, 3.0, -30.0 ); // Adjust the translation for each fence
+			glScalef(0.001, 0.001, 0.001);
+			glRotatef(90.0f, 0, 1, 0);
+			model_fence.Draw();
+			glPopMatrix();
+		}
+
+		// Loop to draw multiple fences on the third side
+		for (int i = 0; i < 9; ++i) {
+			glPushMatrix();
+			glTranslatef(20.0 - i * 5.0, 3.0, 30.0); // Adjust the translation for each fence
+			glScalef(0.001, 0.001, 0.001);
+			glRotatef(90.0f, 0, 1, 0);
+			model_fence.Draw();
+			glPopMatrix();
+		}
+
+
 
 	glPushMatrix();
-	glTranslatef(0.0, 5.0, 5.0);
-	glScalef(0.05, 0.05, 0.05);
+	glTranslatef(3.0, 0.0, 3.0);
+	glScalef(0.02, 0.02, 0.02);
 	glRotatef(0.0f, 1, 0, 0);
-	//model_fuelPump.Draw();
+	model_fuelPump.Draw();
 	glPopMatrix();
 
 
 	glPushMatrix();
-	glTranslatef(0.0, 5.0, 5.0);
-	glScalef(0.05, 0.05, 0.05);
+	glTranslatef(3.0, 0.0, 18.0);
+	glScalef(0.03, 0.03, 0.03);
 	glRotatef(0.0f, 1, 0, 0);
-	//model_gasStation.Draw();
+	model_gasStation.Draw();
 	glPopMatrix();
 
 	glPushMatrix();
 	glTranslatef(0.0, 5.0, 5.0);
 	glScalef(1, 1, 1);
 	glRotatef(0.0f, 1, 0, 0);
-	//model_car.Draw();
+	model_car.Draw();
 	glPopMatrix();
 
 	glPushMatrix();
@@ -645,6 +759,11 @@ void myDisplay(void)
 	glRotatef(0.0f, 1, 0, 0);
 	model_gun3.Draw();
 	glPopMatrix();
+
+	}
+
+	
+
 
 
 	// Set up 2D orthographic projection to draw text
@@ -685,10 +804,11 @@ void myDisplay(void)
 	glEnable(GL_LIGHTING);
 	glEnable(GL_DEPTH_TEST);
 
-	for (auto& zombie : zombies) {
-		zombie.draw();
-	}
+	
 
+	updateBullets();
+
+	// Draw bullets
 	for (auto& bullet : bullets) {
 		bullet.draw();
 	}
@@ -972,11 +1092,11 @@ bool checkBulletZombieCollision() {
 	return false; // No collision occurred
 }
 
-void fireBullet(float angle) {
-	Bullet newBullet;
-	newBullet.fire(playerX, playerY + 5, playerZ, angle); // Fire from player position
-	bullets.push_back(newBullet);
-}
+//void fireBullet(float angle) {
+//	Bullet newBullet;
+//	newBullet.fire(playerX, playerY , playerZ, angle); // Fire from player position
+//	bullets.push_back(newBullet);
+//}
 
 void drawBullets() {
 	for (auto& bullet : bullets) {
@@ -992,43 +1112,31 @@ void updatePlayerDirection(float angle) {
 
 void fireBullet() {
 	Bullet newBullet;
-	newBullet.fire(weaponX, weaponY + 1, weaponZ, playerAngle); // Adjust Y to match gun height
+	newBullet.fire(playerX, playerY + 5, playerZ, yaw, pitch);
 	bullets.push_back(newBullet);
 }
 
-void Bullet::update() {
-	if (!active) return;
-
-	// Update bullet position based on velocity
-	position.x += velocity.x;
-	position.y += velocity.y;
-	position.z += velocity.z;
-
-	// Check for boundary conditions to deactivate bullet
-	if (position.x < -30 || position.x > 30 || position.z < -30 || position.z > 30) {
-		active = false;
-		return;
-	}
-
-	// Check for collisions with zombies
-	for (auto& zombie : zombies) {
-		if (!zombie.active) continue;
-
-		float dx = position.x - zombie.x;
-		float dy = position.y - (zombie.y + 3); // considering the zombie height
-		float dz = position.z - zombie.z;
-		float distance = sqrt(dx * dx + dy * dy + dz * dz);
-
-		if (distance < 1.0f) { // Collision threshold, can be adjusted
-			active = false; // Deactivate the bullet
-			zombie.health -= 50; // Damage the zombie, adjust as necessary
-			if (zombie.health <= 0) {
-				zombie.active = false; // Deactivate the zombie if health is depleted
-			}
-			break; // No need to check other zombies if this bullet is already inactive
-		}
-	}
-}
+//void Bullet::update() {
+//	if (!active) return;
+//	position.x += velocity.x * 0.1f; // Adjust speed as needed
+//	position.y += velocity.y * 0.1f; // Adjust speed as needed
+//	position.z += velocity.z * 0.1f; // Adjust speed as needed
+//
+//	// Check for collision with zombies
+//	for (Zombie& zombie : zombies) {
+//		if (zombie.active && checkCollision(zombie)) {
+//			zombie.takeDamage(20.0f); // Apply damage
+//			active = false; // Deactivate bullet
+//			std::cout << "Bullet hit zombie at (" << zombie.x << ", " << zombie.y << ", " << zombie.z << ")" << std::endl;
+//			break;
+//		}
+//	}
+//
+//	// Deactivate bullet if it goes out of bounds (example condition)
+//	if (position.x > 100 || position.x < -100 || position.y > 100 || position.y < -100 || position.z > 100 || position.z < -100) {
+//		active = false;
+//	}
+//}
 
 
 // In your game loop or relevant function
@@ -1145,18 +1253,22 @@ void myKeyboard(unsigned char key, int x, int y) {
 	case 'w':
 		playerAngle = 270;  // North
 		weaponAngle = 270;
+		yaw = 180;
 		break;
 	case 's':
 		playerAngle = 90;  // South
 		weaponAngle = 90;
+		yaw = 0;
 		break;
 	case 'a':
 		playerAngle = 0;  // West
 		weaponAngle = 0;
+		yaw = 90;
 		break;
 	case 'd':
 		playerAngle = 180;  // East
 		weaponAngle = 180;
+		yaw = -90;
 		break;
 	}
 
@@ -1181,6 +1293,8 @@ void myKeyboard(unsigned char key, int x, int y) {
 		if (distance < 5.0 && countdownTime <= 0) { // Check if within interaction distance, adjust as necessary
 			doorIsOpen = true;
 			doorAngle = 90; // Rotate the door by 90 degrees
+			scene1 = false;
+			scene2= true;
 		}
 		float distanceToLamp = sqrt(pow(playerX - lampPosition.x, 2) + pow(playerZ - lampPosition.z, 2));
 		if (distanceToLamp < 5.0) { // Interaction distance check
@@ -1221,6 +1335,11 @@ void myKeyboard(unsigned char key, int x, int y) {
 	}
 
 	switch (key) {
+	case 'f':
+		fireBullet();
+		isRecoiling = true;  // Start the recoil effect
+		recoilAmount = 0.5f;  // Set the initial recoil amount
+		break;
 	case 'p':
 		// Toggle first-person mode
 		firstPersonMode = !firstPersonMode;
@@ -1239,12 +1358,12 @@ void myKeyboard(unsigned char key, int x, int y) {
 		break;
 	}
 
-	if (key == 'f') {  // Assuming 'f' key is for firing
-		fireBullet();
-		recoilAmount = 2.0f;  // Set recoil amount
-		printf("Recoil started\n");  // Debug output
+	//if (key == 'f') {  // Assuming 'f' key is for firing
+	//	fireBullet();
+	//	recoilAmount = 2.0f;  // Set recoil amount
+	//	printf("Recoil started\n");  // Debug output
 
-	}
+	//}
 
 	setupCamera();  // Update the camera setup
 	glutPostRedisplay();  // Redraw the scene with the new settings
