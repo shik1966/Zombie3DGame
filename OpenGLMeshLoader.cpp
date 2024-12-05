@@ -91,8 +91,8 @@ Vector perkMachinePosition = Vector(28.0, 2.5, -15.0);  // Position of the perk 
 
 Vector tablePosition(-26.0, 0.0, -28.0);  // Position of the table
 bool tableInteracted = false;  // To ensure score is added only once
-bool scene1 = true;  // Scene 1 is active by default
-bool scene2 = false;  // Scene 2 is inactive by default
+bool scene1 = false;//ne 1 is active by default
+bool scene2 = true;//cene 2 is inactive by default
 
 // Model Variables
 Model_3DS model_lamp;
@@ -112,6 +112,9 @@ Model_3DS model_fence;
 Model_3DS model_fuelPump;
 Model_3DS model_car;
 Model_3DS model_gun3;
+Model_3DS model_truck;
+Model_3DS model_truck2;
+
 
 
 
@@ -616,14 +619,6 @@ void myDisplay(void)
 
 
 
-		// Draw cubes
-		//glPushMatrix();
-		//glTranslatef(-15.0, 0.0, -15.0);
-		//glScalef(1, 1, 1);
-		//glRotatef(0.0f, 1, 0, 0);
-		//model_cubes.Draw();
-		//glPopMatrix();
-
 		cubes.draw(); // Draw the cubes model
 
 		glPushMatrix();
@@ -698,6 +693,16 @@ void myDisplay(void)
 		for (auto& zombie : zombies) {
 			zombie.draw();
 		}
+		glPushMatrix();
+		glTranslatef(3.0, 0.0, 18.0);
+		glScalef(0.05, 0.05, 0.05);
+		glRotatef(0.0f, 1, 0, 0);
+		model_truck.Draw();
+		glPopMatrix();
+
+	
+
+
 	}
 
 	else if (scene2) {
@@ -730,6 +735,14 @@ void myDisplay(void)
 		}
 
 
+	//glPushMatrix();
+	//glTranslatef(-15.0, 0.0, -15.0);
+	//glScalef(0.005, 0.005, 0.005);
+	//glRotatef(0.0f, 1, 0, 0);
+	//model_truck2.Draw();
+	//glPopMatrix();
+
+
 
 	glPushMatrix();
 	glTranslatef(3.0, 0.0, 3.0);
@@ -759,6 +772,15 @@ void myDisplay(void)
 	glRotatef(0.0f, 1, 0, 0);
 	model_gun3.Draw();
 	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(0.0, 5.0, 5.0);
+	glScalef(0.05, 0.05, 0.05);
+	glRotatef(0.0f, 1, 0, 0);
+	model_truck2.Draw();
+	glPopMatrix();
+
+
 
 	}
 
@@ -1017,6 +1039,8 @@ void LoadAssets()
 	model_gasStation.Load("Models/gasStation/gasStation.3ds");
 	model_car.Load("Models/car/car.3ds");
 	model_gun3.Load("Models/gun3/gun3.3ds");
+	model_truck.Load("Models/truck/JeepRenegade.3ds");
+	model_truck2.Load("Models/truck2/truck2.3DS");
 
 	// Loading texture files
 	tex_ground.Load("Textures/floor4.bmp");
