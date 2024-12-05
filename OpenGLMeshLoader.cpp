@@ -746,16 +746,11 @@ void myDisplay(void)
 	model_gasStation.Draw();
 	glPopMatrix();
 
-<<<<<<< HEAD
-	
-
-	}
-=======
 	glPushMatrix();
 	glTranslatef(0.0, 5.0, 5.0);
 	glScalef(1, 1, 1);
 	glRotatef(0.0f, 1, 0, 0);
-	//model_car.Draw();
+	model_car.Draw();
 	glPopMatrix();
 
 	glPushMatrix();
@@ -765,7 +760,11 @@ void myDisplay(void)
 	model_gun3.Draw();
 	glPopMatrix();
 
->>>>>>> 7e93bb27a140b5ec3a2c3627f0fc8a74536b7ef7
+	}
+
+	
+
+
 
 	// Set up 2D orthographic projection to draw text
 	glMatrixMode(GL_PROJECTION);
