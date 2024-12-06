@@ -113,6 +113,8 @@ float truckY = 0.0f;
 bool isTranslate2 = false;
 float doorY = 0.0f;
 
+float elapsedTime = 0.0f;
+
 
 // Global definition
 Vector perkMachine2Position = Vector(27.0, 4.0, -20.0);  // Adjust position as needed
@@ -601,6 +603,22 @@ void updateBullets() {
 	}
 }
 
+
+void updateLightIntensity() {
+	float maxIntensity = 1.0f;  // Maximum light intensity
+	float minIntensity = 0.05f;  // Minimum light intensity
+	float timeElapsed = 180.0f - gameTime;  // Time elapsed since the start of the game
+	float intensity = maxIntensity - ((maxIntensity - minIntensity) * (elapsedTime / 180.0f));
+
+	if (intensity < minIntensity) intensity = minIntensity; // Ensure it doesn't drop below minimum
+
+	GLfloat lightDiffuse[] = { intensity, intensity, intensity, 1.0f };
+	GLfloat lightAmbient[] = { intensity * 0.5f, intensity * 0.5f, intensity * 0.5f, 1.0f };
+
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient);
+}
+
 //=======================================================================
 // Display Function
 //=======================================================================
@@ -609,15 +627,17 @@ void myDisplay(void)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-	GLfloat lightIntensity[] = { 0.7, 0.7, 0.7, 1.0f };
-	GLfloat lightPosition[] = { 0.0f, 100.0f, 0.0f, 0.0f };
-	glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
-	glLightfv(GL_LIGHT0, GL_AMBIENT, lightIntensity);
+	//GLfloat lightIntensity[] = { 0.7, 0.7, 0.7, 1.0f };
+	//GLfloat lightPosition[] = { 0.0f, 100.0f, 0.0f, 0.0f };
+	//glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
+	//glLightfv(GL_LIGHT0, GL_AMBIENT, lightIntensity);
 	if (gameActive) {
 		// Draw Ground
 		RenderGround();
 		// Draw naruto
 		glPushMatrix();
+
+		updateLightIntensity();
 		//handle jump case
 		if (isJumping) {
 			playerY += playerVelocityY;  // Move the player up or down
@@ -1476,6 +1496,7 @@ void checkInvincibilityCollisions() {
 	}
 }
 
+
 void updateGame(int value) {
 	if (!gameActive) return;
 	// Update each bullet
@@ -1503,7 +1524,14 @@ void updateGame(int value) {
 			std::cout << "Invincibility ended." << std::endl;
 		}
 	}
+	// Update the elapsed time
+	elapsedTime += 1.0f;  // Assuming this function is called every second
+
+	// Update the light intensity
+	updateLightIntensity();
+
 	glutTimerFunc(1000, updateGame, 0);
+	glutPostRedisplay();
 }
 
 
@@ -1631,7 +1659,7 @@ void myKeyboard(unsigned char key, int x, int y) {
 		float distance = sqrt(pow(playerX - doorPosition.x, 2) + pow(playerZ - doorPosition.z, 2));
 		if (scene1)
 		{
-			if (distance < 5.0 && countdownTime <= 0) { // Check if within interaction distance, adjust as necessary
+			if (distance < 4.0 && countdownTime <= 0) { // Check if within interaction distance, adjust as necessary
 
 				doorIsOpen = true;
 				doorAngle = 90; // Rotate the door by 90 degrees
@@ -1759,6 +1787,7 @@ void myKeyboard(unsigned char key, int x, int y) {
 	glutPostRedisplay();  // Redraw the scene with the new settings
 }
 
+
 //=======================================================================
 // Main Function
 //=======================================================================
@@ -1782,7 +1811,7 @@ void main(int argc, char** argv)
 
 	glutTimerFunc(1000, updateCountdown, 0); // Start the countdown timer
 	glutTimerFunc(100, updateZombiePosition, 0);
-	glutTimerFunc(10000, updateGame, 0);
+	glutTimerFunc(1000, updateGame, 0);
 
 	glutTimerFunc(10000, spawnZombie, 0); // Start spawning zombies
 	glutKeyboardFunc(myKeyboard);
@@ -1797,11 +1826,12 @@ void main(int argc, char** argv)
 
 	LoadAssets();
 	glEnable(GL_DEPTH_TEST);
+
+	// Enable lighting without initial setup
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 	glEnable(GL_NORMALIZE);
 	glEnable(GL_COLOR_MATERIAL);
-
 	glShadeModel(GL_SMOOTH);
 
 	glutMainLoop();
