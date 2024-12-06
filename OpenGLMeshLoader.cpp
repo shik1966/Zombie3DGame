@@ -101,6 +101,8 @@ int currentAmmo = 30;  // Current ammunition in the weapon
 int maxAmmo = 30;      // Maximum capacity of the weapon
 bool isReloading = false;  // Flag to check if the weapon is currently reloading
 
+bool isInvincible = false;
+int invincibilityTimer = 0;
 
 bool isDucking = false;  // State to check if the player is currently ducking
 bool iskey= false;
@@ -128,6 +130,9 @@ Model_3DS model_car;
 Model_3DS model_gun3;
 Model_3DS model_truck;
 Model_3DS model_truck2;
+Model_3DS model_beast;
+Model_3DS model_invincibility;
+
 
 
 
@@ -139,6 +144,40 @@ GLTexture tex_walls;
 //=======================================================================
 // Classes
 //=======================================================================
+
+class Invincibility {
+public:
+	Vector position;
+	bool active;
+	bool pickedUp;
+
+	Invincibility() : position(0.0, 0.0, 0.0), active(false), pickedUp(false) {}
+
+	void spawn(float x, float z) {
+		position = Vector(x, 2.0, z);  // Spawns at y = 2.0 for visibility
+		active = true;
+		pickedUp = false;
+	}
+
+	void draw() {
+		if (!active || pickedUp) return;
+		glPushMatrix();
+		glTranslatef(position.x, position.y, position.z);
+		glScalef(0.02, 0.02, 0.02);
+		glRotatef(0.0f, 1, 0, 0);
+		model_invincibility.Draw();
+		glPopMatrix();
+	}
+
+	bool checkCollision(float playerX, float playerZ) {
+		float dx = playerX - position.x;
+		float dz = playerZ - position.z;
+		float distance = sqrt(dx * dx + dz * dz);
+		return distance < 5.0; // Collision radius
+	}
+};
+
+std::vector<Invincibility> invincibilityPowerUps;
 
 class Zombie {
 public:
@@ -187,6 +226,12 @@ public:
 		health -= damage;
 		if (health <= 0) {
 			active = false;
+			if (rand() % 2 == 0) {
+				// 20% chance to spawn an invincibility power-up
+				Invincibility newPowerUp;
+				newPowerUp.spawn(x, z);
+				invincibilityPowerUps.push_back(newPowerUp);
+			}
 		}
 		else {
 			staggerBack();
@@ -297,6 +342,9 @@ public:
 		}
 	}
 };
+
+
+
 
 CubesModel cubes(-15.0, 0.0, -15.0); // Initialize cubes model at a specific position
 
@@ -866,8 +914,6 @@ void myDisplay(void)
 				glPopMatrix();
 			}
 
-
-
 		}
 	}
 	else {
@@ -941,6 +987,11 @@ void myDisplay(void)
 		bullet.draw();
 	}
 
+	for (auto& powerUp : invincibilityPowerUps) {
+		powerUp.draw();
+	}
+
+
 	//sky box
 	glPushMatrix();
 
@@ -956,6 +1007,8 @@ void myDisplay(void)
 
 
 	glPopMatrix();
+
+
 
 
 
@@ -1148,6 +1201,9 @@ void LoadAssets()
 	model_gun3.Load("Models/gun3/gun3.3ds");
 	model_truck.Load("Models/truck/JeepRenegade.3ds");
 	model_truck2.Load("Models/truck2/truck2.3DS");
+	model_invincibility.Load("Models/invincibility/invincible.3ds");
+	
+
 
 	// Loading texture files
 	tex_ground.Load("Textures/floor4.bmp");
@@ -1187,7 +1243,7 @@ void updateZombiePosition(int value) {
 		float distance = sqrt(dx * dx + dz * dz);
 
 		// Check for collision and whether the zombie can hit again
-		if (distance < collisionDistance && zombie.canHit()) {
+		if (distance < collisionDistance && zombie.canHit() && !isInvincible) {
 			playerHealth -= damage;
 			if (playerHealth <= 0) {
 				gameActive = false; // End the game if the player's health is depleted
@@ -1346,6 +1402,17 @@ void fireBullet() {
 }
 
 
+void checkInvincibilityCollisions() {
+	for (auto& powerUp : invincibilityPowerUps) {
+		if (powerUp.active && !powerUp.pickedUp && powerUp.checkCollision(playerX, playerZ)) {
+			powerUp.pickedUp = true;
+			isInvincible = true;
+			invincibilityTimer = 10; // 10 seconds of invincibility
+			std::cout << "Invincibility activated!" << std::endl;
+		}
+	}
+}
+
 void updateGame(int value) {
 	if (!gameActive) return;
 	// Update each bullet
@@ -1364,8 +1431,18 @@ void updateGame(int value) {
 	}
 	checkCubesCollision(); // Check for collisions between the player and cubes model
 	// Re-register the update function
+	checkInvincibilityCollisions();  // Call this function to check for collisions
+	
+	if (isInvincible) {
+		invincibilityTimer--;
+		if (invincibilityTimer <= 0) {
+			isInvincible = false;
+			std::cout << "Invincibility ended." << std::endl;
+		}
+	}
 	glutTimerFunc(1000, updateGame, 0);
 }
+
 
 
 //=======================================================================
