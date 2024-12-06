@@ -58,7 +58,7 @@ float pitch = 0.0f;
 const float sensitivity = 0.1f;
 float zombieX = -20.0f, zombieY = 0.0f, zombieZ = -20.0f; 
 float playerHealth = 100.0f;
-int gameTime = 80;  
+int gameTime = 180;  
 bool gameActive = true;
 bool doorIsOpen = false;
 float doorAngle = 0.0; 
@@ -93,8 +93,8 @@ Vector perkMachinePosition = Vector(28.0, 2.5, -15.0);  // Position of the perk 
 
 Vector tablePosition(-26.0, 0.0, -28.0);  // Position of the table
 bool tableInteracted = false;  // To ensure score is added only once
-bool scene1 = false;//ne 1 is active by default
-bool scene2 = true;//cene 2 is inactive by default
+bool scene1 = true;//ne 1 is active by default
+bool scene2 = false;//cene 2 is inactive by default
 
 
 int currentAmmo = 30;  // Current ammunition in the weapon
@@ -1010,12 +1010,14 @@ void myDisplay(void)
 	updateBullets();
 
 	// Draw bullets
-	for (auto& bullet : bullets) {
-		bullet.draw();
-	}
+	if (gameActive) {
+		for (auto& bullet : bullets) {
+			bullet.draw();
+		}
 
-	for (auto& powerUp : invincibilityPowerUps) {
-		powerUp.draw();
+		for (auto& powerUp : invincibilityPowerUps) {
+			powerUp.draw();
+		}
 	}
 
 
