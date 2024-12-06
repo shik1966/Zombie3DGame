@@ -96,7 +96,7 @@ Vector perkMachinePosition = Vector(28.0, 2.5, -15.0);  // Position of the perk 
 Vector tablePosition(-26.0, 0.0, -28.0);  // Position of the table
 bool tableInteracted = false;  // To ensure score is added only once
 bool scene1 = true;//ne 1 is active by default
-bool scene2 = false;//cene 2 is inactive by default
+bool scene2 = true;//cene 2 is inactive by default
 
 
 int currentAmmo = 30;  // Current ammunition in the weapon
@@ -294,14 +294,14 @@ public:
 
 			// Randomly decide whether to drop an item, with a 30% chance
 			if (rand() % 2 ==0) { // 30% probability
-				if (scene2) {
+				if (scene2 && doorIsOpen) {
 					// Spawn Double Points in scene 2
 					DoublePoints newBoost;
 					newBoost.spawn(x, z);
 					doublePointsCollectibles.push_back(newBoost);
 					std::cout << "Double Points spawned." << std::endl;
 				}
-				else if (scene1) {
+				else if (scene1 && !doorIsOpen) {
 					// Spawn Invincibility in scene 1
 					Invincibility newPowerUp;
 					newPowerUp.spawn(x, z);
@@ -674,12 +674,11 @@ void updateBullets() {
 	}
 }
 
-
 void updateLightIntensity() {
 	float maxIntensity = 1.0f;  // Maximum light intensity
-	float minIntensity = 0.05f;  // Minimum light intensity
+	float minIntensity = 0.005f;  // Minimum light intensity
 	float timeElapsed = 180.0f - gameTime;  // Time elapsed since the start of the game
-	float intensity = maxIntensity - ((maxIntensity - minIntensity) * (elapsedTime / 180.0f));
+	float intensity = maxIntensity - ((maxIntensity - minIntensity) * (elapsedTime / gameTime));
 
 	if (intensity < minIntensity) intensity = minIntensity; // Ensure it doesn't drop below minimum
 
@@ -689,7 +688,6 @@ void updateLightIntensity() {
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);
 	glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient);
 }
-
 //=======================================================================
 // Display Function
 //=======================================================================
@@ -1619,6 +1617,12 @@ void checkDoublePointsCollisions() {
 
 
 
+bool checkCollisionWithExit(float playerX, float playerZ, Vector exitPosition, float collisionThreshold) {
+	float dx = playerX - exitPosition.x;
+	float dz = playerZ - exitPosition.z;
+	float distance = sqrt(dx * dx + dz * dz);
+	return distance < collisionThreshold;
+}
 
 
 void updateGame(int value) {
@@ -1795,12 +1799,10 @@ void myKeyboard(unsigned char key, int x, int y) {
 		}
 			else if (scene2)
 			{
-				if (iskey)
-				{
-					isTranslate2 = true;
-					
-
-			    }
+			if (iskey && playerScore >= 100 && checkCollisionWithExit(playerX, playerZ, doorPosition, 3.0)) {
+				isTranslate2 = true;
+				playerScore -= 100;
+			}
 			}
 		float distanceToLamp = sqrt(pow(playerX - lampPosition.x, 2) + pow(playerZ - lampPosition.z, 2));
 		if (distanceToLamp < 5.0) { // Interaction distance check
@@ -1823,7 +1825,7 @@ void myKeyboard(unsigned char key, int x, int y) {
 		if (distanceToPerkMachine < 5.0 && perkMachineActive && playerScore >= 50) {
 			playerMaxHealth = 150;  // Increase health cap
 			perkMachineActive = false;  // Disable further interaction
-			playerScore = playerScore - 50;
+			playerScore = playerScore - 20;
 		}
 
 		float distanceToTable = sqrt(pow(playerX - tablePosition.x, 2) + pow(playerZ - tablePosition.z, 2));
@@ -1839,10 +1841,9 @@ void myKeyboard(unsigned char key, int x, int y) {
 		float distanceToCar = sqrt(pow(playerX - truckX, 2) + pow(playerZ - truckZ, 2));
 
 		// Check if the player is within a certain distance to the truck (e.g., 5.0 units)
-		if (distanceToCar < 5.0 && playerScore > 50) {
+		if (distanceToCar < 5.0) {
 			iskey = true;  // Player can interact with the truck
 			isTranslate = true;
-			playerScore -= 50;  // Deduct points
 		}
 		//check for collision with couch
 
