@@ -93,7 +93,7 @@ Vector perkMachinePosition = Vector(28.0, 2.5, -15.0);  // Position of the perk 
 
 Vector tablePosition(-26.0, 0.0, -28.0);  // Position of the table
 bool tableInteracted = false;  // To ensure score is added only once
-bool scene1 = true;//ne 1 is active by default
+bool scene1 = false;//ne 1 is active by default
 bool scene2 = true;//cene 2 is inactive by default
 
 
@@ -107,6 +107,9 @@ int invincibilityTimer = 0;
 bool isDucking = false;  // State to check if the player is currently ducking
 bool iskey= false;
 bool isGun3 = false;
+bool gameWin = false;
+bool isTranslate= false;
+float truckY = 0.0f;
 // Model Variables
 Model_3DS model_lamp;
 Model_3DS model_couch;
@@ -599,186 +602,186 @@ void myDisplay(void)
 	GLfloat lightPosition[] = { 0.0f, 100.0f, 0.0f, 0.0f };
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
 	glLightfv(GL_LIGHT0, GL_AMBIENT, lightIntensity);
-
-	// Draw Ground
-	RenderGround();
-	// Draw naruto
-	glPushMatrix();
-	//handle jump case
-	if (isJumping) {
-		playerY += playerVelocityY;  // Move the player up or down
-		playerVelocityY -= gravity;  // Apply gravity to the player
-		if (playerY <= initialPlayerY) {  // Check if the player has landed
-			playerY = initialPlayerY;  // Reset the player to the initial position
-			playerVelocityY = 0.0f;  // Reset the player's velocity
-			isJumping = false;  // Set jumping state to false
+	if (gameActive) {
+		// Draw Ground
+		RenderGround();
+		// Draw naruto
+		glPushMatrix();
+		//handle jump case
+		if (isJumping) {
+			playerY += playerVelocityY;  // Move the player up or down
+			playerVelocityY -= gravity;  // Apply gravity to the player
+			if (playerY <= initialPlayerY) {  // Check if the player has landed
+				playerY = initialPlayerY;  // Reset the player to the initial position
+				playerVelocityY = 0.0f;  // Reset the player's velocity
+				isJumping = false;  // Set jumping state to false
+			}
 		}
-	}
-	glTranslatef(playerX, playerY, playerZ);
-	glScalef(0.03, 0.03, 0.03);
-	glRotatef(playerAngle, 0.0f, 1.0f, 0.0f);
-	model_naruto.Draw();
-	glPopMatrix();
-	
-	if (scene1) {
-		// Draw Walls
-		RenderWalls();
-		// Draw Tree Model
-		glPushMatrix();
-		glTranslatef(10, 0, 0);
-		glScalef(0.7, 0.7, 0.7);
-		//model_tree.Draw();
+		glTranslatef(playerX, playerY, playerZ);
+		glScalef(0.03, 0.03, 0.03);
+		glRotatef(playerAngle, 0.0f, 1.0f, 0.0f);
+		model_naruto.Draw();
 		glPopMatrix();
 
-		// Draw house Model
-		glPushMatrix();
-		glRotatef(90.f, 1, 0, 0);
-		//model_house.Draw();
-		glPopMatrix();
-
-
-		// Draw couch
-		glPushMatrix();
-		glTranslatef(27.0, 1.0, -28.0);
-		glScalef(0.005, 0.005, 0.005);
-		glRotatef(0.0f, 1, 0, 0);
-		model_couch.Draw();
-		glPopMatrix();
-
-		// Draw couch2
-		glPushMatrix();
-		glTranslatef(10.0, 0.0, -30.0);
-		glScalef(5, 5, 5);
-		glRotatef(0.0f, 1, 0, 0);
-		model_couch2.Draw();
-		glPopMatrix();
-
-		if (lampIsOn) {
-			lampPosition.x = playerX;  // Set lamp's X to player's X
-			lampPosition.z = playerZ;  // Set lamp's Z to player's Z
-
-			// Set light properties for moving lamp
-			GLfloat light_position[] = { lampPosition.x, lampPosition.y + 5.0f, lampPosition.z, 1.0f };
-			glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-		}
-
-		glPushMatrix();
-		glTranslatef(lampPosition.x, lampPosition.y, lampPosition.z);
-		glScalef(0.005, 0.005, 0.005);
-		model_lamp.Draw();
-		glPopMatrix();
-
-
-		glPushMatrix();
-		glTranslatef(doorPosition.x, doorPosition.y, doorPosition.z);
-		glScalef(0.1, 0.1, 0.1);
-		if (doorIsOpen) {
-			glRotatef(doorAngle, 0, 1, 0); // Rotate the door around the Y-axis
-			glTranslatef(-1, 0, 0); // Translate to simulate door swinging open; adjust as needed
-		}
-		model_door.Draw();
-		glPopMatrix();
-
-
-		// Draw table
-		if (!tableInteracted) {
+		if (scene1) {
+			// Draw Walls
+			RenderWalls();
+			// Draw Tree Model
 			glPushMatrix();
-			glTranslatef(tablePosition.x, 0.0, tablePosition.z);
+			glTranslatef(10, 0, 0);
+			glScalef(0.7, 0.7, 0.7);
+			//model_tree.Draw();
+			glPopMatrix();
+
+			// Draw house Model
+			glPushMatrix();
+			glRotatef(90.f, 1, 0, 0);
+			//model_house.Draw();
+			glPopMatrix();
+
+
+			// Draw couch
+			glPushMatrix();
+			glTranslatef(27.0, 1.0, -28.0);
+			glScalef(0.005, 0.005, 0.005);
+			glRotatef(0.0f, 1, 0, 0);
+			model_couch.Draw();
+			glPopMatrix();
+
+			// Draw couch2
+			glPushMatrix();
+			glTranslatef(10.0, 0.0, -30.0);
+			glScalef(5, 5, 5);
+			glRotatef(0.0f, 1, 0, 0);
+			model_couch2.Draw();
+			glPopMatrix();
+
+			if (lampIsOn) {
+				lampPosition.x = playerX;  // Set lamp's X to player's X
+				lampPosition.z = playerZ;  // Set lamp's Z to player's Z
+
+				// Set light properties for moving lamp
+				GLfloat light_position[] = { lampPosition.x, lampPosition.y + 5.0f, lampPosition.z, 1.0f };
+				glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+			}
+
+			glPushMatrix();
+			glTranslatef(lampPosition.x, lampPosition.y, lampPosition.z);
+			glScalef(0.005, 0.005, 0.005);
+			model_lamp.Draw();
+			glPopMatrix();
+
+
+			glPushMatrix();
+			glTranslatef(doorPosition.x, doorPosition.y, doorPosition.z);
+			glScalef(0.1, 0.1, 0.1);
+			if (doorIsOpen) {
+				glRotatef(doorAngle, 0, 1, 0); // Rotate the door around the Y-axis
+				glTranslatef(-1, 0, 0); // Translate to simulate door swinging open; adjust as needed
+			}
+			model_door.Draw();
+			glPopMatrix();
+
+
+			// Draw table
+			if (!tableInteracted) {
+				glPushMatrix();
+				glTranslatef(tablePosition.x, 0.0, tablePosition.z);
+				glScalef(0.05, 0.05, 0.05);
+				glRotatef(0.0f, 1, 0, 0);
+				model_table.Draw();
+				glPopMatrix();
+			}
+
+
+
+			cubes.draw(); // Draw the cubes model
+
+			glPushMatrix();
+			glTranslatef(28.0, 0.0, 0.0);
+			glScalef(0.005, 0.005, 0.005);
+			glRotatef(0.0f, 1, 0, 0);
+			model_tv.Draw();
+			glPopMatrix();
+
+			glPushMatrix();
+			glTranslatef(0.0, 5.0, 30.0);
+			glScalef(0.005, 0.005, 0.005);
+			glRotatef(0.0f, 1, 0, 0);
+			model_window.Draw();
+			glPopMatrix();
+
+			// Setup light positions and intensity...
+			if (windowLightActive) {
+				glEnable(GL_LIGHT1);
+				GLfloat light_position[] = { windowPosition.x, windowPosition.y, windowPosition.z, 1.0f };
+				glLightfv(GL_LIGHT1, GL_POSITION, light_position);
+			}
+			else {
+				glDisable(GL_LIGHT1);
+			}
+
+			// Draw the window with updated Y position
+			glPushMatrix();
+			glTranslatef(windowPosition.x, windowPosition.y, windowPosition.z);
+			glScalef(0.005, 0.005, 0.005);
+			model_window.Draw();
+			glPopMatrix();
+
+			glPushMatrix();
+			//handle jump case weapon jumps with player
+			if (isJumping) {
+				weaponY += playerVelocityY;  // Move the weapon up or down
+			}
+			//reset to poistion before jumpiing after jumping
+			else {
+				if (isDucking)
+				{
+					weaponY = 1.0f;
+				}
+				else
+				{
+					weaponY = 2.0f;
+				}
+			}
+
+			float currentWeaponY = weaponY;
+			if (isRecoiling) {
+				currentWeaponY += recoilAmount;  // Move the weapon up
+				recoilAmount -= recoilSpeed;  // Reduce the recoil amount to come back to the original position
+				if (recoilAmount <= 0) {
+					isRecoiling = false;
+					recoilAmount = 0;  // Ensure the recoil amount doesn't go negative
+				}
+			}
+			glTranslatef(weaponX, currentWeaponY, weaponZ);  // Use the modified Y-coordinate
+			glScalef(0.0035, 0.0035, 0.0035);  // Scaling to adjust the weapon size
+			glRotatef(weaponAngle, 0, 1, 0);  // Rotate according to the current weapon angle
+			model_gun.Draw();
+			glPopMatrix();
+
+			//glScalef(0.0035, 0.0035, 0.0035);
+			//glRotatef(weaponAngle, 0, 1, 0);
+			//model_gun.Draw();
+			//glPopMatrix();
+
+			if (perkMachineActive) {
+				glPushMatrix();
+				glTranslatef(perkMachinePosition.x, perkMachinePosition.y, perkMachinePosition.z);
+				glScalef(0.5, 0.5, 0.5);  // Scale as needed
+				glRotatef(180, 0, 1, 0);  // Adjust orientation as needed
+				model_perk.Draw();
+				glPopMatrix();
+			}
+			for (auto& zombie : zombies) {
+				zombie.draw();
+			}
+			glPushMatrix();
+			glTranslatef(3.0, 0.0, 18.0);
 			glScalef(0.05, 0.05, 0.05);
 			glRotatef(0.0f, 1, 0, 0);
-			model_table.Draw();
+			model_truck.Draw();
 			glPopMatrix();
-		}
-
-
-
-		cubes.draw(); // Draw the cubes model
-
-		glPushMatrix();
-		glTranslatef(28.0, 0.0, 0.0);
-		glScalef(0.005, 0.005, 0.005);
-		glRotatef(0.0f, 1, 0, 0);
-		model_tv.Draw();
-		glPopMatrix();
-
-		glPushMatrix();
-		glTranslatef(0.0, 5.0, 30.0);
-		glScalef(0.005, 0.005, 0.005);
-		glRotatef(0.0f, 1, 0, 0);
-		model_window.Draw();
-		glPopMatrix();
-
-		// Setup light positions and intensity...
-		if (windowLightActive) {
-			glEnable(GL_LIGHT1);
-			GLfloat light_position[] = { windowPosition.x, windowPosition.y, windowPosition.z, 1.0f };
-			glLightfv(GL_LIGHT1, GL_POSITION, light_position);
-		}
-		else {
-			glDisable(GL_LIGHT1);
-		}
-
-		// Draw the window with updated Y position
-		glPushMatrix();
-		glTranslatef(windowPosition.x, windowPosition.y, windowPosition.z);
-		glScalef(0.005, 0.005, 0.005);
-		model_window.Draw();
-		glPopMatrix();
-
-		glPushMatrix();
-		//handle jump case weapon jumps with player
-		if (isJumping) {
-			weaponY +=playerVelocityY;  // Move the weapon up or down
-		}
-		//reset to poistion before jumpiing after jumping
-		else {
-			if (isDucking)
-			{
-								weaponY = 1.0f;
-			}
-			else
-			{
-				weaponY = 2.0f;
-		    }
-			}
-
-		float currentWeaponY = weaponY;
-		if (isRecoiling) {
-			currentWeaponY += recoilAmount;  // Move the weapon up
-			recoilAmount -= recoilSpeed;  // Reduce the recoil amount to come back to the original position
-			if (recoilAmount <= 0) {
-				isRecoiling = false;
-				recoilAmount = 0;  // Ensure the recoil amount doesn't go negative
-			}
-		}
-		glTranslatef(weaponX, currentWeaponY, weaponZ);  // Use the modified Y-coordinate
-		glScalef(0.0035, 0.0035, 0.0035);  // Scaling to adjust the weapon size
-		glRotatef(weaponAngle, 0, 1, 0);  // Rotate according to the current weapon angle
-		model_gun.Draw();
-		glPopMatrix();
-
-		//glScalef(0.0035, 0.0035, 0.0035);
-		//glRotatef(weaponAngle, 0, 1, 0);
-		//model_gun.Draw();
-		//glPopMatrix();
-
-		if (perkMachineActive) {
-			glPushMatrix();
-			glTranslatef(perkMachinePosition.x, perkMachinePosition.y, perkMachinePosition.z);
-			glScalef(0.5, 0.5, 0.5);  // Scale as needed
-			glRotatef(180, 0, 1, 0);  // Adjust orientation as needed
-			model_perk.Draw();
-			glPopMatrix();
-		}
-		for (auto& zombie : zombies) {
-			zombie.draw();
-		}
-		glPushMatrix();
-		glTranslatef(3.0, 0.0, 18.0);
-		glScalef(0.05, 0.05, 0.05);
-		glRotatef(0.0f, 1, 0, 0);
-		model_truck.Draw();
-		glPopMatrix();
 
 		glPushMatrix();
 		glTranslatef(0.0, 0.0, 0.0);
@@ -787,131 +790,151 @@ void myDisplay(void)
 		model_exit.Draw();
 		glPopMatrix();
 
-	}
-
-	else if (scene2) {
-		// Draw fence
-		for (int i = 0; i < 9; ++i) {
-			glPushMatrix();
-			glTranslatef(-30.0, 3.0, -20.0 + i * 5.0); // Adjust the translation for each fence
-			glScalef(0.001, 0.001, 0.001);
-			model_fence.Draw();
-			glPopMatrix();
-		}
-		// Loop to draw multiple fences on the second side
-		for (int i = 0; i < 9; ++i) {
-			glPushMatrix();
-			glTranslatef(-20.0 + i * 5.0, 3.0, -30.0); // Adjust the translation for each fence
-			glScalef(0.001, 0.001, 0.001);
-			glRotatef(90.0f, 0, 1, 0);
-			model_fence.Draw();
-			glPopMatrix();
 		}
 
-		// Loop to draw multiple fences on the third side
-		for (int i = 0; i < 9; ++i) {
+		else if (scene2) {
+			// Draw fence
+			for (int i = 0; i < 9; ++i) {
+				glPushMatrix();
+				glTranslatef(-30.0, 3.0, -20.0 + i * 5.0); // Adjust the translation for each fence
+				glScalef(0.001, 0.001, 0.001);
+				model_fence.Draw();
+				glPopMatrix();
+			}
+			// Loop to draw multiple fences on the second side
+			for (int i = 0; i < 9; ++i) {
+				glPushMatrix();
+				glTranslatef(-20.0 + i * 5.0, 3.0, -30.0); // Adjust the translation for each fence
+				glScalef(0.001, 0.001, 0.001);
+				glRotatef(90.0f, 0, 1, 0);
+				model_fence.Draw();
+				glPopMatrix();
+			}
+
+			// Loop to draw multiple fences on the third side
+			for (int i = 0; i < 9; ++i) {
+				glPushMatrix();
+				glTranslatef(20.0 - i * 5.0, 3.0, 30.0); // Adjust the translation for each fence
+				glScalef(0.001, 0.001, 0.001);
+				glRotatef(90.0f, 0, 1, 0);
+				model_fence.Draw();
+				glPopMatrix();
+			}
+
+
+			//glPushMatrix();
+			//glTranslatef(-15.0, 0.0, -15.0);
+			//glScalef(0.005, 0.005, 0.005);
+			//glRotatef(0.0f, 1, 0, 0);
+			//model_truck2.Draw();
+			//glPopMatrix();
+
+
+
 			glPushMatrix();
-			glTranslatef(20.0 - i * 5.0, 3.0, 30.0); // Adjust the translation for each fence
-			glScalef(0.001, 0.001, 0.001);
-			glRotatef(90.0f, 0, 1, 0);
-			model_fence.Draw();
-			glPopMatrix();
-		}
-
-
-		//glPushMatrix();
-		//glTranslatef(-15.0, 0.0, -15.0);
-		//glScalef(0.005, 0.005, 0.005);
-		//glRotatef(0.0f, 1, 0, 0);
-		//model_truck2.Draw();
-		//glPopMatrix();
-
-
-
-		glPushMatrix();
-		glTranslatef(3.0, 0.0, 3.0);
-		glScalef(0.02, 0.02, 0.02);
-		glRotatef(0.0f, 1, 0, 0);
-		model_fuelPump.Draw();
-		glPopMatrix();
-
-
-		glPushMatrix();
-		glTranslatef(3.0, 0.0, 18.0);
-		glScalef(0.04, 0.04, 0.04);
-		glRotatef(0.0f, 1, 0, 0);
-		model_gasStation.Draw();
-		glPopMatrix();
-
-		glPushMatrix();
-		glTranslatef(-12.0, 0.0, 5.0);
-		glScalef(2, 2, 2);
-		glRotatef(0.0f, 1, 0, 0);
-		model_car.Draw();
-		glPopMatrix();
-
-		glPushMatrix();
-		if (!isGun3) {
-			//put gun3 on ground
-			glTranslatef(0.0, 0.0, -10.0);
-			glScalef(0.3, 0.3, 0.3);
+			glTranslatef(3.0, 0.0, 3.0);
+			glScalef(0.02, 0.02, 0.02);
 			glRotatef(0.0f, 1, 0, 0);
-			model_gun3.Draw();
+			model_fuelPump.Draw();
 			glPopMatrix();
 
 
-		}
-		else 
-		{
+			glPushMatrix();
+			glTranslatef(3.0, 0.0, 18.0);
+			glScalef(0.04, 0.04, 0.04);
+			glRotatef(0.0f, 1, 0, 0);
+			model_gasStation.Draw();
+			glPopMatrix();
 
-		if (isJumping) {
-			weaponY += playerVelocityY;  // Move the weapon up or down
-		}
-		//reset to poistion before jumpiing after jumping
-		else {
-			if (isDucking)
-			{
-				weaponY = 1.0f;
+			glPushMatrix();
+			glTranslatef(-12.0, 0.0, 5.0);
+			glScalef(2, 2, 2);
+			glRotatef(0.0f, 1, 0, 0);
+			model_car.Draw();
+			glPopMatrix();
+
+			glPushMatrix();
+			if (!isGun3) {
+				//put gun3 on ground
+				glTranslatef(0.0, 0.0, -10.0);
+				glScalef(0.3, 0.3, 0.3);
+				glRotatef(0.0f, 1, 0, 0);
+				model_gun3.Draw();
+				glPopMatrix();
+
+
 			}
 			else
 			{
-				weaponY = 2.0f;
+
+				if (isJumping) {
+					weaponY += playerVelocityY;  // Move the weapon up or down
+				}
+				//reset to poistion before jumpiing after jumping
+				else {
+					if (isDucking)
+					{
+						weaponY = 1.0f;
+					}
+					else
+					{
+						weaponY = 2.0f;
+					}
+				}
+
+				float currentWeaponY = weaponY;
+				if (isRecoiling) {
+					currentWeaponY += recoilAmount;  // Move the weapon up
+					recoilAmount -= recoilSpeed;  // Reduce the recoil amount to come back to the original position
+					if (recoilAmount <= 0) {
+						isRecoiling = false;
+						recoilAmount = 0;  // Ensure the recoil amount doesn't go negative
+					}
+				}
+				glTranslatef(weaponX, currentWeaponY, weaponZ);  // Use the modified Y-coordinate
+				glScalef(0.3, 0.3, 0.3);  // Scaling to adjust the weapon size
+				glRotatef(weaponAngle, 0, 1, 0);  // Rotate according to the current weapon angle
+				model_gun3.Draw();
+				glPopMatrix();
 			}
-		}
 
-		float currentWeaponY = weaponY;
-		if (isRecoiling) {
-			currentWeaponY += recoilAmount;  // Move the weapon up
-			recoilAmount -= recoilSpeed;  // Reduce the recoil amount to come back to the original position
-			if (recoilAmount <= 0) {
-				isRecoiling = false;
-				recoilAmount = 0;  // Ensure the recoil amount doesn't go negative
+			if (isTranslate) {
+				//move truck2 upwards and keep moving till it disappears
+				glPushMatrix();
+				glTranslatef(-15.0, truckY, -15.0);
+				glScalef(0.05, 0.05, 0.05);
+				glRotatef(0.0f, 1, 0, 0);
+				model_truck2.Draw();
+				glPopMatrix();
+				truckY += 0.1;
+				if (truckY > 10.0) {
+					isTranslate = false;
+				}
+				}
+			if (!iskey) {
+				glPushMatrix();
+				glTranslatef(13.0, 0.0, -5.0);
+				glScalef(0.05, 0.05, 0.05);
+				glRotatef(0.0f, 1, 0, 0);
+				model_truck2.Draw();
+				glPopMatrix();
 			}
+
 		}
-		glTranslatef(weaponX, currentWeaponY, weaponZ);  // Use the modified Y-coordinate
-		glScalef(0.3, 0.3, 0.3);  // Scaling to adjust the weapon size
-		glRotatef(weaponAngle, 0, 1, 0);  // Rotate according to the current weapon angle
-		model_gun3.Draw();
-		glPopMatrix();
-	    }
-
-
-	glPushMatrix();
-	glTranslatef(13.0, 0.0, -5.0);
-	glScalef(0.05, 0.05, 0.05);
-	glRotatef(0.0f, 1, 0, 0);
-	model_truck2.Draw();
-	glPopMatrix();
-
-
-	glPushMatrix();
-	glTranslatef(0.0, 2.0, 0.0);
-	glScalef(0.01, 0.01, 0.01);
-	glRotatef(0.0f, 1, 0, 0);
-	model_invincibility.Draw();
-	glPopMatrix();
-
-
+	}
+	else {
+		if (gameWin) {
+						// Display game win text
+			char text[50];
+			sprintf(text, "Congratulations! You Win! Final Score: %d", playerScore);
+			renderBitmapString(10, 10, GLUT_BITMAP_HELVETICA_18, text);
+		}
+		else {
+			// Display game over text
+			char text[50];
+			sprintf(text, "Game Over! Final Score: %d", playerScore);
+			renderBitmapString(10, 10, GLUT_BITMAP_HELVETICA_18, text);
+		}
 	}
 
 	
@@ -1229,6 +1252,9 @@ void updateZombiePosition(int value) {
 		// Check for collision and whether the zombie can hit again
 		if (distance < collisionDistance && zombie.canHit() && !isInvincible) {
 			playerHealth -= damage;
+			if (playerHealth <= 0) {
+				gameActive = false; // End the game if the player's health is depleted
+			}
 			printf("Player hit! Health: %f\n", playerHealth); // Output the health to console (or handle as needed)
 		}
 	}
@@ -1548,10 +1574,22 @@ void myKeyboard(unsigned char key, int x, int y) {
 	if (key == 'e' || key == 'E' ) {
 		float distance = sqrt(pow(playerX - doorPosition.x, 2) + pow(playerZ - doorPosition.z, 2));
 		if (distance < 5.0 && countdownTime <= 0) { // Check if within interaction distance, adjust as necessary
-			doorIsOpen = true;
-			doorAngle = 90; // Rotate the door by 90 degrees
-			scene1 = false;
-			scene2= true;
+			if (scene1)
+			{
+				doorIsOpen = true;
+				doorAngle = 90; // Rotate the door by 90 degrees
+				scene1 = false;
+				scene2 = true;
+			}
+			else if (scene2)
+			{
+				if (iskey && playerScore==100)
+				{
+					doorAngle = 90; // Rotate the door by 90 degrees
+				    gameWin = true;
+
+			    }
+			}
 		}
 		float distanceToLamp = sqrt(pow(playerX - lampPosition.x, 2) + pow(playerZ - lampPosition.z, 2));
 		if (distanceToLamp < 5.0) { // Interaction distance check
@@ -1584,16 +1622,23 @@ void myKeyboard(unsigned char key, int x, int y) {
 			printf("Score: %d\n", playerScore);  // Optional: Output score to console
 		}
 		//check for collision with the car
-		float distanceToCar = sqrt(pow(playerX + 12.0, 2) + pow(playerZ - 5.0, 2));
+		// Truck's position
+		float truckX = 13.0f;
+		float truckZ = -5.0f;
+		float distanceToCar = sqrt(pow(playerX - truckX, 2) + pow(playerZ - truckZ, 2));
+
+		// Check if the player is within a certain distance to the truck (e.g., 5.0 units)
 		if (distanceToCar < 5.0) {
-			iskey = true;
+			iskey = true;  // Player can interact with the truck
+			isTranslate = true;
 		}
 		//check for collision with the Gun 3
 		float distanceToGun3 = sqrt(pow(playerX, 2) + pow(playerZ + 10.0, 2)); // Gun3 assumed to be at (0, 0, -10)
 
 		// Interaction with Gun3
-		if (distanceToGun3 < 2.0) {  // Replace 2.0 with the pickup radius
+		if (distanceToGun3 < 2.0 && playerScore>=10) {  // Replace 2.0 with the pickup radius
 			isGun3 = true;  // Equip the gun
+			playerScore -= 10;  // Increase score
 		}
 
 
