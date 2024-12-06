@@ -129,6 +129,8 @@ Model_3DS model_truck;
 Model_3DS model_truck2;
 Model_3DS model_beast;
 Model_3DS model_invincibility;
+Model_3DS model_exit;
+
 
 
 
@@ -778,8 +780,12 @@ void myDisplay(void)
 		model_truck.Draw();
 		glPopMatrix();
 
-	
-
+		glPushMatrix();
+		glTranslatef(0.0, 0.0, 0.0);
+		glScalef(0.05, 0.05, 0.05);
+		glRotatef(0.0f, 1, 0, 0);
+		model_exit.Draw();
+		glPopMatrix();
 
 	}
 
@@ -904,8 +910,6 @@ void myDisplay(void)
 	glRotatef(0.0f, 1, 0, 0);
 	model_invincibility.Draw();
 	glPopMatrix();
-
-
 
 
 	}
@@ -1181,6 +1185,7 @@ void LoadAssets()
 	model_truck.Load("Models/truck/JeepRenegade.3ds");
 	model_truck2.Load("Models/truck2/truck2.3DS");
 	model_invincibility.Load("Models/invincibility/invincible.3ds");
+	model_exit.Load("Models/exit/exit.3ds");
 	
 
 
