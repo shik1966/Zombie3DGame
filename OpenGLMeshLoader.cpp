@@ -38,6 +38,8 @@ public:
 	}
 };
 
+
+
 Vector Eye(30, 30, 20);
 Vector At(0, 0, 0);
 Vector Up(0, 2, 0);
@@ -119,6 +121,8 @@ Vector perkMachine2Position = Vector(27.0, 4.0, -20.0);  // Adjust position as n
 bool perkMachine2Active = true;
 int perkMachine2Cost = 20;  // Cost in points
 
+bool doublePointsActive = false;  // Track whether double points are active
+
 
 // Model Variables
 Model_3DS model_lamp;
@@ -144,10 +148,7 @@ Model_3DS model_invincibility;
 Model_3DS model_exit;
 Model_3DS model_beast;
 Model_3DS model_perk2;
-
-
-
-
+Model_3DS model_speed;
 
 
 // Textures
@@ -191,6 +192,41 @@ public:
 };
 
 std::vector<Invincibility> invincibilityPowerUps;
+
+
+class DoublePoints {
+public:
+	Vector position;
+	bool active;
+	bool pickedUp;
+
+	DoublePoints() : position(0.0, 0.0, 0.0), active(false), pickedUp(false) {}
+
+	void spawn(float x, float z) {
+		position = Vector(x, 2.0, z);  // Spawn height at y = 2.0 for visibility
+		active = true;
+		pickedUp = false;
+	}
+
+	void draw() {
+		if (!active || pickedUp) return;
+		glPushMatrix();
+		glTranslatef(position.x, position.y, position.z);
+		glScalef(0.005, 0.005, 0.005);
+		glRotatef(0.0f, 1, 0, 0);
+		model_speed.Draw();
+		glPopMatrix();
+	}
+
+	bool checkCollision(float playerX, float playerZ) {
+		float dx = playerX - position.x;
+		float dz = playerZ - position.z;
+		float distance = sqrt(dx * dx + dz * dz);
+		return distance < 5.0; // Adjust collision distance as needed
+	}
+};
+
+std::vector<DoublePoints> doublePointsCollectibles;
 
 class Zombie {
 public:
@@ -239,15 +275,35 @@ public:
 		health -= damage;
 		if (health <= 0) {
 			active = false;
-			if (rand() % 2 == 0) {
-				// 20% chance to spawn an invincibility power-up
-				Invincibility newPowerUp;
-				newPowerUp.spawn(x, z);
-				invincibilityPowerUps.push_back(newPowerUp);
+
+			// Randomly decide whether to drop an item, with a 30% chance
+			if (rand() % 2 ==0) { // 30% probability
+				if (scene2) {
+					// Spawn Double Points in scene 2
+					DoublePoints newBoost;
+					newBoost.spawn(x, z);
+					doublePointsCollectibles.push_back(newBoost);
+					std::cout << "Double Points spawned." << std::endl;
+				}
+				else if (scene1) {
+					// Spawn Invincibility in scene 1
+					Invincibility newPowerUp;
+					newPowerUp.spawn(x, z);
+					invincibilityPowerUps.push_back(newPowerUp);
+					std::cout << "Invincibility spawned." << std::endl;
+				}
 			}
+
+			// Increase the player's score
+			int scoreIncrement = 10;  // Normal score increment for killing a zombie
+			if (doublePointsActive) {
+				scoreIncrement *= 2;  // Double the score if double points are active
+			}
+			playerScore += scoreIncrement;
+			std::cout << "Zombie killed. Score: " << playerScore << std::endl;
 		}
 		else {
-			staggerBack();
+			staggerBack();  // Make the zombie stagger back if not killed
 		}
 	}
 
@@ -360,6 +416,7 @@ public:
 
 
 CubesModel cubes(-15.0, 0.0, -15.0); // Initialize cubes model at a specific position
+
 
 
 
@@ -786,13 +843,6 @@ void myDisplay(void)
 			glRotatef(0.0f, 1, 0, 0);
 			model_truck.Draw();
 			glPopMatrix();
-
-		glPushMatrix();
-		glTranslatef(0.0, 0.0, 0.0);
-		glScalef(0.05, 0.05, 0.05);
-		glRotatef(0.0f, 1, 0, 0);
-		//model_exit.Draw();
-		glPopMatrix();
 		
 
 		if (perkMachine2Active) {
@@ -1050,7 +1100,14 @@ void myDisplay(void)
 		for (auto& powerUp : invincibilityPowerUps) {
 			powerUp.draw();
 		}
+		for (auto& boost : doublePointsCollectibles) {
+			if (boost.active && !boost.pickedUp) {
+				boost.draw();
+			}
+		}
+
 	}
+
 
 
 	//sky box
@@ -1265,7 +1322,8 @@ void LoadAssets()
 	model_invincibility.Load("Models/invincibility/invincible.3ds");
 	model_exit.Load("Models/exit/exit.3ds");
 	//model_beast.Load("Models/beast/beast.3ds");
-	model_perk2.Load("Models/perkMachine2/untitled.3ds");
+	model_perk2.Load("Models/perkMachine2/untitled.3ds");	
+	model_speed.Load("Models/speed/collectible.3ds");
 
 
 
@@ -1476,6 +1534,35 @@ void checkInvincibilityCollisions() {
 	}
 }
 
+void disableDoublePoints(int value) {
+	doublePointsActive = false;
+	std::cout << "Double points deactivated." << std::endl;
+	glutPostRedisplay(); // Redraw scene to reflect the change
+}
+
+
+void enableDoublePoints(int duration) {
+	doublePointsActive = true;
+	std::cout << "Double points activated for " << duration << " seconds." << std::endl;
+	glutTimerFunc(duration * 1000, disableDoublePoints, 0);  // Activate timer for duration
+}
+
+
+void checkDoublePointsCollisions() {
+	for (auto& boost : doublePointsCollectibles) {
+		if (boost.active && !boost.pickedUp && boost.checkCollision(playerX, playerZ)) {
+			boost.pickedUp = true;  // Mark as picked up to avoid multiple uses
+			enableDoublePoints(20);  // Double points for 20 seconds
+			std::cout << "Double points activated!" << std::endl;
+		}
+	}
+}
+
+
+
+
+
+
 void updateGame(int value) {
 	if (!gameActive) return;
 	// Update each bullet
@@ -1495,6 +1582,7 @@ void updateGame(int value) {
 	checkCubesCollision(); // Check for collisions between the player and cubes model
 	// Re-register the update function
 	checkInvincibilityCollisions();  // Call this function to check for collisions
+	checkDoublePointsCollisions();
 	
 	if (isInvincible) {
 		invincibilityTimer--;
@@ -1503,6 +1591,7 @@ void updateGame(int value) {
 			std::cout << "Invincibility ended." << std::endl;
 		}
 	}
+ // Check collisions with double points boosts
 	glutTimerFunc(1000, updateGame, 0);
 }
 
@@ -1701,6 +1790,7 @@ void myKeyboard(unsigned char key, int x, int y) {
 		if (distanceToPerkMachine2 < 5.0 && perkMachine2Active && playerScore >= perkMachine2Cost) {
 			playerScore -= perkMachine2Cost;  // Deduct points
 			maxAmmo += 30;  // Increase ammo count, adjust amount as needed
+			currentAmmo = maxAmmo;
 			std::cout << "Ammo increased. Current Ammo: " << currentAmmo << std::endl;
 			std::cout << "Remaining Score: " << playerScore << std::endl;
 			perkMachine2Active = false;  // Optional: deactivate after use
