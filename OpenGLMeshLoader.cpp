@@ -115,7 +115,7 @@ float doorY = 0.0f;
 
 
 // Global definition
-Vector perkMachine2Position = Vector(25.0, 0.0, -20.0);  // Adjust position as needed
+Vector perkMachine2Position = Vector(27.0, 4.0, -20.0);  // Adjust position as needed
 bool perkMachine2Active = true;
 int perkMachine2Cost = 20;  // Cost in points
 
@@ -797,9 +797,9 @@ void myDisplay(void)
 
 		if (perkMachine2Active) {
 			glPushMatrix();
-			glTranslatef(perkMachine2Position.x, 0.0, perkMachine2Position.z);
-			glScalef(0.5, 0.5, 0.5);  // Scale as needed
-			glRotatef(180, 0, 1, 0);  // Adjust orientation as needed
+			glTranslatef(perkMachine2Position.x, perkMachine2Position.y, perkMachine2Position.z);
+			glScalef(0.15, 0.15, 0.15);  // Scale as needed
+			glRotatef(-90, 0, 1, 0);  // Adjust orientation as needed
 			model_perk2.Draw();  // Assuming you have a model for this machine
 			glPopMatrix();
 		}
@@ -829,6 +829,14 @@ void myDisplay(void)
 			for (int i = 0; i < 9; ++i) {
 				glPushMatrix();
 				glTranslatef(20.0 - i * 5.0, 3.0, 30.0); // Adjust the translation for each fence
+				glScalef(0.001, 0.01, 0.001);
+				glRotatef(90.0f, 0, 1, 0);
+				model_fence.Draw();
+				glPopMatrix();
+			}
+			for (int i = 0; i < 9; ++i) {
+				glPushMatrix();
+				glTranslatef(30.0 - i * 5.0, 3.0, -30.0); // Adjust the translation for each fence
 				glScalef(0.001, 0.01, 0.001);
 				glRotatef(90.0f, 0, 1, 0);
 				model_fence.Draw();
