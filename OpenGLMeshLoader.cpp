@@ -1003,18 +1003,6 @@ void myMotion(int x, int y)
 	glutPostRedisplay();	//Re-draw scene 
 }
 
-//=======================================================================
-// Mouse Function
-//=======================================================================
-void myMouse(int button, int state, int x, int y)
-{
-	y = HEIGHT - y;
-
-	if (state == GLUT_DOWN)
-	{
-		cameraZoom = y;
-	}
-}
 
 //=======================================================================
 // Reshape Function
@@ -1161,12 +1149,6 @@ void updatePlayerDirection(float angle) {
 	if (playerAngle < 0) playerAngle += 360.0;
 }
 
-void fireBullet() {
-	Bullet newBullet;
-	newBullet.fire(playerX, playerY + 5, playerZ, yaw, pitch);
-	bullets.push_back(newBullet);
-}
-
 //void Bullet::update() {
 //	if (!active) return;
 //	position.x += velocity.x * 0.1f; // Adjust speed as needed
@@ -1254,7 +1236,7 @@ void reloadWeapon() {
 	}
 }
 
-void fireBullet2() {
+void fireBullet() {
 	if (currentAmmo > 0 && !isReloading) {
 		Bullet newBullet;
 		newBullet.fire(playerX, playerY + 5, playerZ, yaw, pitch);
@@ -1290,13 +1272,41 @@ void updateGame(int value) {
 }
 
 
+//=======================================================================
+// Mouse Function
+//=======================================================================
+void myMouse(int button, int state, int x, int y)
+{
+	y = HEIGHT - y;
+
+	if (state == GLUT_DOWN)
+	{
+		cameraZoom = y;
+	}
+
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+		// Shoot bullet when left mouse button is pressed
+		fireBullet();  // Make sure this function correctly handles shooting logic
+	}
+	else if (button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN) {
+		// Move player forward when right mouse button is pressed
+		float stepSize = 0.5;  // Adjust step size to control speed
+		playerX += stepSize * sin(playerAngle * M_PI / 180.0);
+		playerZ += stepSize * cos(playerAngle * M_PI / 180.0);
+		weaponX += stepSize * sin(playerAngle * M_PI / 180.0);
+		weaponZ += stepSize * cos(playerAngle * M_PI / 180.0);
+		glutPostRedisplay();  // Redraw the scene with updated player position
+	}
+}
+
+
 
 //=======================================================================
 // Keyboard Function
 //==========================================================
 
 void myKeyboard(unsigned char key, int x, int y) {
-	float stepSize = 0.25;  // Movement step size
+	float stepSize = 0.3;  // Movement step size
 	float newX, newZ;  // Variables to hold potential new positions
 	float newWeaponX, newWeaponZ;
 
