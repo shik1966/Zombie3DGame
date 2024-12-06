@@ -102,6 +102,9 @@ int maxAmmo = 30;      // Maximum capacity of the weapon
 bool isReloading = false;  // Flag to check if the weapon is currently reloading
 
 
+bool isDucking = false;  // State to check if the player is currently ducking
+bool iskey= false;
+bool isGun3 = false;
 // Model Variables
 Model_3DS model_lamp;
 Model_3DS model_couch;
@@ -679,8 +682,15 @@ void myDisplay(void)
 		}
 		//reset to poistion before jumpiing after jumping
 		else {
-			weaponY = 2.0f;
-		}
+			if (isDucking)
+			{
+								weaponY = 1.0f;
+			}
+			else
+			{
+				weaponY = 2.0f;
+		    }
+			}
 
 		float currentWeaponY = weaponY;
 		if (isRecoiling) {
@@ -729,7 +739,7 @@ void myDisplay(void)
 		// Draw fence
 		for (int i = 0; i < 9; ++i) {
 			glPushMatrix();
-			glTranslatef(-30.0 , 3.0, -20.0 + i * 5.0); // Adjust the translation for each fence
+			glTranslatef(-30.0, 3.0, -20.0 + i * 5.0); // Adjust the translation for each fence
 			glScalef(0.001, 0.001, 0.001);
 			model_fence.Draw();
 			glPopMatrix();
@@ -737,7 +747,7 @@ void myDisplay(void)
 		// Loop to draw multiple fences on the second side
 		for (int i = 0; i < 9; ++i) {
 			glPushMatrix();
-			glTranslatef(-20.0 + i * 5.0, 3.0, -30.0 ); // Adjust the translation for each fence
+			glTranslatef(-20.0 + i * 5.0, 3.0, -30.0); // Adjust the translation for each fence
 			glScalef(0.001, 0.001, 0.001);
 			glRotatef(90.0f, 0, 1, 0);
 			model_fence.Draw();
@@ -755,46 +765,85 @@ void myDisplay(void)
 		}
 
 
-	//glPushMatrix();
-	//glTranslatef(-15.0, 0.0, -15.0);
-	//glScalef(0.005, 0.005, 0.005);
-	//glRotatef(0.0f, 1, 0, 0);
-	//model_truck2.Draw();
-	//glPopMatrix();
+		//glPushMatrix();
+		//glTranslatef(-15.0, 0.0, -15.0);
+		//glScalef(0.005, 0.005, 0.005);
+		//glRotatef(0.0f, 1, 0, 0);
+		//model_truck2.Draw();
+		//glPopMatrix();
 
+
+
+		glPushMatrix();
+		glTranslatef(3.0, 0.0, 3.0);
+		glScalef(0.02, 0.02, 0.02);
+		glRotatef(0.0f, 1, 0, 0);
+		model_fuelPump.Draw();
+		glPopMatrix();
+
+
+		glPushMatrix();
+		glTranslatef(3.0, 0.0, 18.0);
+		glScalef(0.04, 0.04, 0.04);
+		glRotatef(0.0f, 1, 0, 0);
+		model_gasStation.Draw();
+		glPopMatrix();
+
+		glPushMatrix();
+		glTranslatef(-12.0, 0.0, 5.0);
+		glScalef(2, 2, 2);
+		glRotatef(0.0f, 1, 0, 0);
+		model_car.Draw();
+		glPopMatrix();
+
+		glPushMatrix();
+		if (!isGun3) {
+			//put gun3 on ground
+			glTranslatef(0.0, 0.0, -10.0);
+			glScalef(0.3, 0.3, 0.3);
+			glRotatef(0.0f, 1, 0, 0);
+			model_gun3.Draw();
+			glPopMatrix();
+
+
+		}
+		else 
+		{
+
+		if (isJumping) {
+			weaponY += playerVelocityY;  // Move the weapon up or down
+		}
+		//reset to poistion before jumpiing after jumping
+		else {
+			if (isDucking)
+			{
+				weaponY = 1.0f;
+			}
+			else
+			{
+				weaponY = 2.0f;
+			}
+		}
+
+		float currentWeaponY = weaponY;
+		if (isRecoiling) {
+			currentWeaponY += recoilAmount;  // Move the weapon up
+			recoilAmount -= recoilSpeed;  // Reduce the recoil amount to come back to the original position
+			if (recoilAmount <= 0) {
+				isRecoiling = false;
+				recoilAmount = 0;  // Ensure the recoil amount doesn't go negative
+			}
+		}
+		glTranslatef(weaponX, currentWeaponY, weaponZ);  // Use the modified Y-coordinate
+		glScalef(0.3, 0.3, 0.3);  // Scaling to adjust the weapon size
+		glRotatef(weaponAngle, 0, 1, 0);  // Rotate according to the current weapon angle
+		model_gun3.Draw();
+		glPopMatrix();
+	    }
 
 
 	glPushMatrix();
-	glTranslatef(3.0, 0.0, 3.0);
-	glScalef(0.02, 0.02, 0.02);
-	glRotatef(0.0f, 1, 0, 0);
-	model_fuelPump.Draw();
-	glPopMatrix();
-
-
-	glPushMatrix();
-	glTranslatef(3.0, 0.0, 20.0);
-	glScalef(0.03, 0.03, 0.03);
-	glRotatef(0.0f, 1, 0, 0);
-	model_gasStation.Draw();
-	glPopMatrix();
-
-	glPushMatrix();
-	glTranslatef(0.0, 5.0, 5.0);
-	glScalef(1, 1, 1);
-	glRotatef(0.0f, 1, 0, 0);
-	model_car.Draw();
-	glPopMatrix();
-
-	glPushMatrix();
-	glTranslatef(0.0, 5.0, 5.0);
-	glScalef(1,1, 1);
-	glRotatef(0.0f, 1, 0, 0);
-	model_gun3.Draw();
-	glPopMatrix();
-
-	glPushMatrix();
-	glTranslatef(0.0, 5.0, 5.0);
+	glTranslatef(13.0, 0.0, -5.0);
 	glScalef(0.05, 0.05, 0.05);
 	glRotatef(0.0f, 1, 0, 0);
 	model_truck2.Draw();
@@ -1375,7 +1424,17 @@ void myKeyboard(unsigned char key, int x, int y) {
 		weaponAngle = 180;
 		yaw = -90;
 		break;
+	case 'c':
+		isDucking = !isDucking;  // Toggle ducking state
+		if (isDucking) {
+			playerY -= 2.0f;  // Lower the player's position
+		}
+		else {
+			playerY += 2.0f;  // Raise the player's position
+		}
+		break;
 	}
+	
 
 	// Compute new positions based on angle
 	if (key == 'w' || key == 's' || key == 'a' || key == 'd') {
@@ -1393,7 +1452,7 @@ void myKeyboard(unsigned char key, int x, int y) {
 		}
 	}
 
-	if ((key == 'e' || key == 'E') && !doorIsOpen) {
+	if (key == 'e' || key == 'E' ) {
 		float distance = sqrt(pow(playerX - doorPosition.x, 2) + pow(playerZ - doorPosition.z, 2));
 		if (distance < 5.0 && countdownTime <= 0) { // Check if within interaction distance, adjust as necessary
 			doorIsOpen = true;
@@ -1430,6 +1489,18 @@ void myKeyboard(unsigned char key, int x, int y) {
 			playerScore += 500;  // Increase score by 500
 			tableInteracted = true;  // Prevent further interaction
 			printf("Score: %d\n", playerScore);  // Optional: Output score to console
+		}
+		//check for collision with the car
+		float distanceToCar = sqrt(pow(playerX + 12.0, 2) + pow(playerZ - 5.0, 2));
+		if (distanceToCar < 5.0) {
+			iskey = true;
+		}
+		//check for collision with the Gun 3
+		float distanceToGun3 = sqrt(pow(playerX, 2) + pow(playerZ + 10.0, 2)); // Gun3 assumed to be at (0, 0, -10)
+
+		// Interaction with Gun3
+		if (distanceToGun3 < 2.0) {  // Replace 2.0 with the pickup radius
+			isGun3 = true;  // Equip the gun
 		}
 
 
