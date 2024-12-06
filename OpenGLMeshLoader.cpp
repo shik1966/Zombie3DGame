@@ -93,8 +93,14 @@ Vector perkMachinePosition = Vector(28.0, 2.5, -15.0);  // Position of the perk 
 
 Vector tablePosition(-26.0, 0.0, -28.0);  // Position of the table
 bool tableInteracted = false;  // To ensure score is added only once
-bool scene1 = false;//ne 1 is active by default
+bool scene1 = true;//ne 1 is active by default
 bool scene2 = true;//cene 2 is inactive by default
+
+
+int currentAmmo = 30;  // Current ammunition in the weapon
+int maxAmmo = 30;      // Maximum capacity of the weapon
+bool isReloading = false;  // Flag to check if the weapon is currently reloading
+
 
 // Model Variables
 Model_3DS model_lamp;
@@ -819,6 +825,11 @@ void myDisplay(void)
 	sprintf(scoreText, "Score: %d", playerScore);
 	renderBitmapString(10, 40, GLUT_BITMAP_HELVETICA_18, scoreText); // Adjust position as needed
 
+	// Render bullet count
+	char ammoText[50];
+	sprintf(ammoText, "Ammo: %d/%d", currentAmmo, maxAmmo);
+	renderBitmapString(WIDTH - 150, 20, GLUT_BITMAP_HELVETICA_18, ammoText);
+
 	// Restore matrices, lighting, and depth test
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
@@ -1225,6 +1236,38 @@ void regenerateHealth(int value) {
 	glutTimerFunc(5000, regenerateHealth, 0);  // Re-register timer every 5 seconds
 }
 
+
+
+void finishReload(int value) {
+	currentAmmo = maxAmmo;
+	isReloading = false;
+	std::cout << "Reload complete. Ammo restored to " << maxAmmo << std::endl;
+	glutPostRedisplay();
+}
+
+void reloadWeapon() {
+	if (currentAmmo < maxAmmo) {
+		std::cout << "Reloading weapon..." << std::endl;
+		isReloading = true;
+		// Simulate a reload delay
+		glutTimerFunc(2000, finishReload, 0);  // 2 seconds reload time
+	}
+}
+
+void fireBullet2() {
+	if (currentAmmo > 0 && !isReloading) {
+		Bullet newBullet;
+		newBullet.fire(playerX, playerY + 5, playerZ, yaw, pitch);
+		bullets.push_back(newBullet);
+		currentAmmo--;
+		std::cout << "Fired bullet. Remaining ammo: " << currentAmmo << std::endl;
+	}
+	else {
+		std::cout << "Cannot fire: Out of ammo or reloading!" << std::endl;
+	}
+}
+
+
 void updateGame(int value) {
 	if (!gameActive) return;
 	// Update each bullet
@@ -1376,13 +1419,23 @@ void myKeyboard(unsigned char key, int x, int y) {
 
 	switch (key) {
 	case 'f':
-		fireBullet();
-		isRecoiling = true;  // Start the recoil effect
-		recoilAmount = 0.5f;  // Set the initial recoil amount
+		if (currentAmmo > 0) {  // Only allow shooting if there is ammo
+			fireBullet();
+			isRecoiling = true;  // Start the recoil effect
+			recoilAmount = 0.5f;  // Set the initial recoil amount
+			currentAmmo--;  // Decrement the bullet count
+			printf("Shot fired. Bullets remaining: %d\n", currentAmmo);
+		}
+		else {
+			printf("Out of ammo!\n");
+		}
 		break;
 	case 'p':
 		// Toggle first-person mode
 		firstPersonMode = !firstPersonMode;
+		break;
+	case 'r':
+		reloadWeapon();
 		break;
 	case '1':
 	case '2':
