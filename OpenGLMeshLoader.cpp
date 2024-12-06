@@ -110,6 +110,8 @@ bool isGun3 = false;
 bool gameWin = false;
 bool isTranslate= false;
 float truckY = 0.0f;
+bool isTranslate2 = false;
+float doorY = 0.0f;
 // Model Variables
 Model_3DS model_lamp;
 Model_3DS model_couch;
@@ -765,14 +767,7 @@ void myDisplay(void)
 			//model_gun.Draw();
 			//glPopMatrix();
 
-			if (perkMachineActive) {
-				glPushMatrix();
-				glTranslatef(perkMachinePosition.x, perkMachinePosition.y, perkMachinePosition.z);
-				glScalef(0.5, 0.5, 0.5);  // Scale as needed
-				glRotatef(180, 0, 1, 0);  // Adjust orientation as needed
-				model_perk.Draw();
-				glPopMatrix();
-			}
+			
 			for (auto& zombie : zombies) {
 				zombie.draw();
 			}
@@ -783,12 +778,7 @@ void myDisplay(void)
 			model_truck.Draw();
 			glPopMatrix();
 
-		glPushMatrix();
-		glTranslatef(0.0, 0.0, 0.0);
-		glScalef(0.05, 0.05, 0.05);
-		glRotatef(0.0f, 1, 0, 0);
-		model_exit.Draw();
-		glPopMatrix();
+		
 
 		}
 
@@ -797,7 +787,7 @@ void myDisplay(void)
 			for (int i = 0; i < 9; ++i) {
 				glPushMatrix();
 				glTranslatef(-30.0, 3.0, -20.0 + i * 5.0); // Adjust the translation for each fence
-				glScalef(0.001, 0.001, 0.001);
+				glScalef(0.001, 0.01, 0.001);
 				model_fence.Draw();
 				glPopMatrix();
 			}
@@ -805,7 +795,7 @@ void myDisplay(void)
 			for (int i = 0; i < 9; ++i) {
 				glPushMatrix();
 				glTranslatef(-20.0 + i * 5.0, 3.0, -30.0); // Adjust the translation for each fence
-				glScalef(0.001, 0.001, 0.001);
+				glScalef(0.001, 0.01, 0.001);
 				glRotatef(90.0f, 0, 1, 0);
 				model_fence.Draw();
 				glPopMatrix();
@@ -815,7 +805,7 @@ void myDisplay(void)
 			for (int i = 0; i < 9; ++i) {
 				glPushMatrix();
 				glTranslatef(20.0 - i * 5.0, 3.0, 30.0); // Adjust the translation for each fence
-				glScalef(0.001, 0.001, 0.001);
+				glScalef(0.001, 0.01, 0.001);
 				glRotatef(90.0f, 0, 1, 0);
 				model_fence.Draw();
 				glPopMatrix();
@@ -917,6 +907,37 @@ void myDisplay(void)
 				glScalef(0.05, 0.05, 0.05);
 				glRotatef(0.0f, 1, 0, 0);
 				model_truck2.Draw();
+				glPopMatrix();
+			}
+			if (isTranslate2) {
+				//move truck2 upwards and keep moving till it disappears
+				glPushMatrix();
+				glTranslatef(doorPosition.x, doorPosition.y, doorPosition.z);
+				glScalef(0.005, 0.005, 0.005);
+				glRotatef(90.0f, 0, 1, 0);
+				model_exit.Draw();
+				glPopMatrix();
+				doorPosition.y += 0.1;
+				if (doorPosition.y > 10.0) {
+					isTranslate2 = false;
+					gameActive = false;
+					gameWin = true;
+				}
+			}
+			else {
+				glPushMatrix();
+				glTranslatef(doorPosition.x, doorPosition.y, doorPosition.z);
+				glScalef(0.005, 0.005, 0.005);
+				glRotatef(90.0f, 0, 1, 0);
+				model_exit.Draw();
+				glPopMatrix();
+			}
+			if (perkMachineActive) {
+				glPushMatrix();
+				glTranslatef(perkMachinePosition.x, perkMachinePosition.y, perkMachinePosition.z);
+				glScalef(0.5, 0.5, 0.5);  // Scale as needed
+				glRotatef(180, 0, 1, 0);  // Adjust orientation as needed
+				model_perk.Draw();
 				glPopMatrix();
 			}
 
@@ -1573,24 +1594,25 @@ void myKeyboard(unsigned char key, int x, int y) {
 
 	if (key == 'e' || key == 'E' ) {
 		float distance = sqrt(pow(playerX - doorPosition.x, 2) + pow(playerZ - doorPosition.z, 2));
-		if (distance < 5.0 && countdownTime <= 0) { // Check if within interaction distance, adjust as necessary
-			if (scene1)
-			{
+		if (scene1)
+		{
+			if (distance < 5.0 && countdownTime <= 0) { // Check if within interaction distance, adjust as necessary
+
 				doorIsOpen = true;
 				doorAngle = 90; // Rotate the door by 90 degrees
 				scene1 = false;
 				scene2 = true;
 			}
+		}
 			else if (scene2)
 			{
-				if (iskey && playerScore==100)
+				if (iskey)
 				{
-					doorAngle = 90; // Rotate the door by 90 degrees
-				    gameWin = true;
+					isTranslate2 = true;
+					
 
 			    }
 			}
-		}
 		float distanceToLamp = sqrt(pow(playerX - lampPosition.x, 2) + pow(playerZ - lampPosition.z, 2));
 		if (distanceToLamp < 5.0) { // Interaction distance check
 			lampIsOn = !lampIsOn;  // Toggle lamp state
@@ -1609,10 +1631,10 @@ void myKeyboard(unsigned char key, int x, int y) {
 		}
 
 		float distanceToPerkMachine = sqrt(pow(playerX - perkMachinePosition.x, 2) + pow(playerZ - perkMachinePosition.z, 2));
-		if (distanceToPerkMachine < 5.0 && perkMachineActive && playerScore >= 500) {
+		if (distanceToPerkMachine < 5.0 && perkMachineActive && playerScore >= 50) {
 			playerMaxHealth = 150;  // Increase health cap
 			perkMachineActive = false;  // Disable further interaction
-			playerScore = playerScore - 500;
+			playerScore = playerScore - 50;
 		}
 
 		float distanceToTable = sqrt(pow(playerX - tablePosition.x, 2) + pow(playerZ - tablePosition.z, 2));
@@ -1636,7 +1658,7 @@ void myKeyboard(unsigned char key, int x, int y) {
 		float distanceToGun3 = sqrt(pow(playerX, 2) + pow(playerZ + 10.0, 2)); // Gun3 assumed to be at (0, 0, -10)
 
 		// Interaction with Gun3
-		if (distanceToGun3 < 2.0 && playerScore>=10) {  // Replace 2.0 with the pickup radius
+		if (distanceToGun3 < 2.0 && playerScore>10) {  // Replace 2.0 with the pickup radius
 			isGun3 = true;  // Equip the gun
 			playerScore -= 10;  // Increase score
 		}
