@@ -38,6 +38,8 @@ public:
 	}
 };
 
+
+
 Vector Eye(30, 30, 20);
 Vector At(0, 0, 0);
 Vector Up(0, 2, 0);
@@ -112,6 +114,7 @@ bool isTranslate= false;
 float truckY = 0.0f;
 bool isTranslate2 = false;
 float doorY = 0.0f;
+bool couchisvisible = true;
 
 float elapsedTime = 0.0f;
 
@@ -120,6 +123,8 @@ float elapsedTime = 0.0f;
 Vector perkMachine2Position = Vector(27.0, 4.0, -20.0);  // Adjust position as needed
 bool perkMachine2Active = true;
 int perkMachine2Cost = 20;  // Cost in points
+
+bool doublePointsActive = false;  // Track whether double points are active
 
 
 // Model Variables
@@ -146,7 +151,8 @@ Model_3DS model_invincibility;
 Model_3DS model_exit;
 Model_3DS model_beast;
 Model_3DS model_perk2;
-
+Model_3DS model_speed;
+Model_3DS model_nun;
 
 
 
@@ -194,6 +200,41 @@ public:
 
 std::vector<Invincibility> invincibilityPowerUps;
 
+
+class DoublePoints {
+public:
+	Vector position;
+	bool active;
+	bool pickedUp;
+
+	DoublePoints() : position(0.0, 0.0, 0.0), active(false), pickedUp(false) {}
+
+	void spawn(float x, float z) {
+		position = Vector(x, 2.0, z);  // Spawn height at y = 2.0 for visibility
+		active = true;
+		pickedUp = false;
+	}
+
+	void draw() {
+		if (!active || pickedUp) return;
+		glPushMatrix();
+		glTranslatef(position.x, position.y, position.z);
+		glScalef(0.005, 0.005, 0.005);
+		glRotatef(0.0f, 1, 0, 0);
+		model_speed.Draw();
+		glPopMatrix();
+	}
+
+	bool checkCollision(float playerX, float playerZ) {
+		float dx = playerX - position.x;
+		float dz = playerZ - position.z;
+		float distance = sqrt(dx * dx + dz * dz);
+		return distance < 5.0; // Adjust collision distance as needed
+	}
+};
+
+std::vector<DoublePoints> doublePointsCollectibles;
+
 class Zombie {
 public:
 	float x, y, z; // Position
@@ -207,11 +248,20 @@ public:
 
 	void draw() {
 		if (!active) return;
-		glPushMatrix();
-		glTranslatef(x, y, z);
-		glScalef(0.05, 0.05, 0.05);
-		model_zombie.Draw();
-		glPopMatrix();
+		if (scene1) {
+			glPushMatrix();
+			glTranslatef(x, y, z);
+			glScalef(0.05, 0.05, 0.05);
+			model_zombie.Draw();
+			glPopMatrix();
+		}
+		else {
+			glPushMatrix();
+			glTranslatef(x, y, z);
+			glScalef(0.005, 0.005, 0.005);
+			model_nun.Draw();
+			glPopMatrix();
+		}
 	}
 
 	void updatePosition(float playerX, float playerZ) {
@@ -241,15 +291,35 @@ public:
 		health -= damage;
 		if (health <= 0) {
 			active = false;
-			if (rand() % 2 == 0) {
-				// 20% chance to spawn an invincibility power-up
-				Invincibility newPowerUp;
-				newPowerUp.spawn(x, z);
-				invincibilityPowerUps.push_back(newPowerUp);
+
+			// Randomly decide whether to drop an item, with a 30% chance
+			if (rand() % 2 ==0) { // 30% probability
+				if (scene2) {
+					// Spawn Double Points in scene 2
+					DoublePoints newBoost;
+					newBoost.spawn(x, z);
+					doublePointsCollectibles.push_back(newBoost);
+					std::cout << "Double Points spawned." << std::endl;
+				}
+				else if (scene1) {
+					// Spawn Invincibility in scene 1
+					Invincibility newPowerUp;
+					newPowerUp.spawn(x, z);
+					invincibilityPowerUps.push_back(newPowerUp);
+					std::cout << "Invincibility spawned." << std::endl;
+				}
 			}
+
+			// Increase the player's score
+			int scoreIncrement = 10;  // Normal score increment for killing a zombie
+			if (doublePointsActive) {
+				scoreIncrement *= 2;  // Double the score if double points are active
+			}
+			playerScore += scoreIncrement;
+			std::cout << "Zombie killed. Score: " << playerScore << std::endl;
 		}
 		else {
-			staggerBack();
+			staggerBack();  // Make the zombie stagger back if not killed
 		}
 	}
 
@@ -362,6 +432,7 @@ public:
 
 
 CubesModel cubes(-15.0, 0.0, -15.0); // Initialize cubes model at a specific position
+
 
 
 
@@ -672,12 +743,14 @@ void myDisplay(void)
 
 
 			// Draw couch
-			glPushMatrix();
-			glTranslatef(27.0, 1.0, -28.0);
-			glScalef(0.005, 0.005, 0.005);
-			glRotatef(0.0f, 1, 0, 0);
-			model_couch.Draw();
-			glPopMatrix();
+			if (couchisvisible) {
+				glPushMatrix();
+				glTranslatef(27.0, 1.0, -28.0);
+				glScalef(0.005, 0.005, 0.005);
+				glRotatef(0.0f, 1, 0, 0);
+				model_couch.Draw();
+				glPopMatrix();
+			}
 
 			// Draw couch2
 			glPushMatrix();
@@ -785,10 +858,20 @@ void myDisplay(void)
 					recoilAmount = 0;  // Ensure the recoil amount doesn't go negative
 				}
 			}
-			glTranslatef(weaponX, currentWeaponY, weaponZ);  // Use the modified Y-coordinate
-			glScalef(0.0035, 0.0035, 0.0035);  // Scaling to adjust the weapon size
-			glRotatef(weaponAngle, 0, 1, 0);  // Rotate according to the current weapon angle
-			model_gun.Draw();
+			
+			if(!couchisvisible)
+			{
+				glTranslatef(weaponX, currentWeaponY, weaponZ);  // Use the modified Y-coordinate
+				glScalef(0.3, 0.3, 0.3);  // Scaling to adjust the weapon size
+				glRotatef(weaponAngle, 0, 1, 0);  // Rotate according to the current weapon angle
+				model_gun3.Draw();
+			}
+			else {
+				glTranslatef(weaponX, currentWeaponY, weaponZ);  // Use the modified Y-coordinate
+				glScalef(0.0035, 0.0035, 0.0035);  // Scaling to adjust the weapon size
+				glRotatef(weaponAngle, 0, 1, 0);  // Rotate according to the current weapon angle
+				model_gun.Draw();
+			}
 			glPopMatrix();
 
 			//glScalef(0.0035, 0.0035, 0.0035);
@@ -806,13 +889,6 @@ void myDisplay(void)
 			glRotatef(0.0f, 1, 0, 0);
 			model_truck.Draw();
 			glPopMatrix();
-
-		glPushMatrix();
-		glTranslatef(0.0, 0.0, 0.0);
-		glScalef(0.05, 0.05, 0.05);
-		glRotatef(0.0f, 1, 0, 0);
-		//model_exit.Draw();
-		glPopMatrix();
 		
 
 		if (perkMachine2Active) {
@@ -993,6 +1069,11 @@ void myDisplay(void)
 				glPopMatrix();
 			}
 
+			
+			for (auto& zombie : zombies) {
+				zombie.draw();
+			}
+
 		}
 	}
 	else {
@@ -1036,8 +1117,13 @@ void myDisplay(void)
 	renderBitmapString(10, HEIGHT - 20, GLUT_BITMAP_HELVETICA_18, healthText);
 
 	char timerText[50];
-	sprintf(timerText, "Timer: %d", countdownTime);
-	renderBitmapString(WIDTH - 120, HEIGHT - 20, GLUT_BITMAP_HELVETICA_18, timerText);
+	sprintf(timerText, "Count Down Timer: %d", countdownTime);
+	renderBitmapString(WIDTH - 190, HEIGHT - 20, GLUT_BITMAP_HELVETICA_18, timerText);
+
+	// render game timer
+	char timerText2[50];
+	sprintf(timerText2, "Game Timer: %d", gameTime);
+	renderBitmapString(WIDTH - 140, HEIGHT - 40, GLUT_BITMAP_HELVETICA_18, timerText2);
 
 	char scoreText[50];
 	sprintf(scoreText, "Score: %d", playerScore);
@@ -1070,7 +1156,14 @@ void myDisplay(void)
 		for (auto& powerUp : invincibilityPowerUps) {
 			powerUp.draw();
 		}
+		for (auto& boost : doublePointsCollectibles) {
+			if (boost.active && !boost.pickedUp) {
+				boost.draw();
+			}
+		}
+
 	}
+
 
 
 	//sky box
@@ -1112,6 +1205,7 @@ void setupCamera() {
 		gluLookAt(playerX, playerY + 5, playerZ,  // Camera position at player's eye level
 			playerX + sin(playerAngle * M_PI / 180.0), playerY + 5, playerZ + cos(playerAngle * M_PI / 180.0),  // Look at point
 			0.0, 1.0, 0.0);  // Up vector is always straight up
+		
 
 		// Draw weapon in first person view
 		glPushMatrix();
@@ -1285,7 +1379,9 @@ void LoadAssets()
 	model_invincibility.Load("Models/invincibility/invincible.3ds");
 	model_exit.Load("Models/exit/exit.3ds");
 	//model_beast.Load("Models/beast/beast.3ds");
-	model_perk2.Load("Models/perkMachine2/untitled.3ds");
+	model_perk2.Load("Models/perkMachine2/untitled.3ds");	
+	model_speed.Load("Models/speed/collectible.3ds");
+	model_nun.Load("Models/nun/Nun Statue N030424.3ds");
 
 
 
@@ -1496,6 +1592,34 @@ void checkInvincibilityCollisions() {
 	}
 }
 
+void disableDoublePoints(int value) {
+	doublePointsActive = false;
+	std::cout << "Double points deactivated." << std::endl;
+	glutPostRedisplay(); // Redraw scene to reflect the change
+}
+
+
+void enableDoublePoints(int duration) {
+	doublePointsActive = true;
+	std::cout << "Double points activated for " << duration << " seconds." << std::endl;
+	glutTimerFunc(duration * 1000, disableDoublePoints, 0);  // Activate timer for duration
+}
+
+
+void checkDoublePointsCollisions() {
+	for (auto& boost : doublePointsCollectibles) {
+		if (boost.active && !boost.pickedUp && boost.checkCollision(playerX, playerZ)) {
+			boost.pickedUp = true;  // Mark as picked up to avoid multiple uses
+			enableDoublePoints(20);  // Double points for 20 seconds
+			std::cout << "Double points activated!" << std::endl;
+		}
+	}
+}
+
+
+
+
+
 
 void updateGame(int value) {
 	if (!gameActive) return;
@@ -1516,6 +1640,7 @@ void updateGame(int value) {
 	checkCubesCollision(); // Check for collisions between the player and cubes model
 	// Re-register the update function
 	checkInvincibilityCollisions();  // Call this function to check for collisions
+	checkDoublePointsCollisions();
 	
 	if (isInvincible) {
 		invincibilityTimer--;
@@ -1524,6 +1649,7 @@ void updateGame(int value) {
 			std::cout << "Invincibility ended." << std::endl;
 		}
 	}
+ // Check collisions with double points boosts
 	// Update the elapsed time
 	elapsedTime += 1.0f;  // Assuming this function is called every second
 
@@ -1713,10 +1839,41 @@ void myKeyboard(unsigned char key, int x, int y) {
 		float distanceToCar = sqrt(pow(playerX - truckX, 2) + pow(playerZ - truckZ, 2));
 
 		// Check if the player is within a certain distance to the truck (e.g., 5.0 units)
-		if (distanceToCar < 5.0) {
+		if (distanceToCar < 5.0 && playerScore > 50) {
 			iskey = true;  // Player can interact with the truck
 			isTranslate = true;
+			playerScore -= 50;  // Deduct points
 		}
+		//check for collision with couch
+
+		// Couch dimensions and position
+		float couchX = 27.0f;        // Couch's X-coordinate
+		float couchZ = -28.0f;       // Couch's Z-coordinate
+		float couchWidth = 3.0f;     // Half-width of the couch in X direction
+		float couchDepth = 2.0f;     // Half-depth of the couch in Z direction
+
+		// Player's dimensions (approximated)
+		float playerHalfWidth = 0.5f;  // Assumed player's half-width for collision
+
+		// Collision detection with the couch (AABB - Axis-Aligned Bounding Box)
+		if ((playerX + playerHalfWidth >= couchX - couchWidth &&
+			playerX - playerHalfWidth <= couchX + couchWidth) &&
+			(playerZ + playerHalfWidth >= couchZ - couchDepth &&
+				playerZ - playerHalfWidth <= couchZ + couchDepth)) {
+			// Collision detected with the couch
+			// Perform desired action here
+			 couchisvisible = false;
+			
+		}
+
+		// Render the couch
+		glPushMatrix();
+		glTranslatef(couchX, 1.0f, couchZ);  // Position the couch
+		glScalef(0.005f, 0.005f, 0.005f);   // Scale the couch
+		glRotatef(0.0f, 1, 0, 0);           // Rotate the couch (if needed)
+		model_couch.Draw();
+		glPopMatrix();
+
 		//check for collision with the Gun 3
 		float distanceToGun3 = sqrt(pow(playerX, 2) + pow(playerZ + 10.0, 2)); // Gun3 assumed to be at (0, 0, -10)
 
@@ -1729,6 +1886,7 @@ void myKeyboard(unsigned char key, int x, int y) {
 		if (distanceToPerkMachine2 < 5.0 && perkMachine2Active && playerScore >= perkMachine2Cost) {
 			playerScore -= perkMachine2Cost;  // Deduct points
 			maxAmmo += 30;  // Increase ammo count, adjust amount as needed
+			currentAmmo = maxAmmo;
 			std::cout << "Ammo increased. Current Ammo: " << currentAmmo << std::endl;
 			std::cout << "Remaining Score: " << playerScore << std::endl;
 			perkMachine2Active = false;  // Optional: deactivate after use
