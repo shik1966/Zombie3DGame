@@ -96,7 +96,7 @@ Vector perkMachinePosition = Vector(28.0, 2.5, -15.0);  // Position of the perk 
 Vector tablePosition(-26.0, 0.0, -28.0);  // Position of the table
 bool tableInteracted = false;  // To ensure score is added only once
 bool scene1 = true;//ne 1 is active by default
-bool scene2 = true;//cene 2 is inactive by default
+bool scene2 = false;//cene 2 is inactive by default
 
 
 int currentAmmo = 30;  // Current ammunition in the weapon
@@ -153,6 +153,9 @@ Model_3DS model_beast;
 Model_3DS model_perk2;
 Model_3DS model_speed;
 Model_3DS model_nun;
+Model_3DS model_sun;
+Model_3DS model_moon;
+
 
 
 
@@ -945,10 +948,27 @@ void myDisplay(void)
 			}
 			for (int i = 0; i < 9; ++i) {
 				glPushMatrix();
-				glTranslatef(30.0 - i * 5.0, 3.0, -30.0); // Adjust the translation for each fence
-				glScalef(0.001, 0.01, 0.001);
-				glRotatef(90.0f, 0, 1, 0);
+				glTranslatef(30.0, 3.0, -20.0 + i * 5.0); // Adjust the translation for each fence
+				glScalef(0.001, 0.001, 0.001);
 				model_fence.Draw();
+				glPopMatrix();
+			}
+
+			if (gameTime > 100) {
+				glPushMatrix();
+				glTranslatef(perkMachinePosition.x + 50, perkMachinePosition.y + 20, perkMachinePosition.z + 10);
+				glScalef(20, 20, 20);  // Scale as needed
+				glRotatef(180, 0, 1, 0);  // Adjust orientation as needed
+				model_sun.Draw();
+				glPopMatrix();
+			}
+			else {
+
+				glPushMatrix();
+				glTranslatef(perkMachinePosition.x + 50, perkMachinePosition.y + 20, perkMachinePosition.z + 10);
+				glScalef(20, 20, 20);  // Scale as needed
+				glRotatef(180, 0, 1, 0);  // Adjust orientation as needed
+				model_moon.Draw();
 				glPopMatrix();
 			}
 
@@ -1103,8 +1123,6 @@ void myDisplay(void)
 			renderBitmapString(10, 10, GLUT_BITMAP_HELVETICA_18, text);
 		}
 	}
-
-	
 
 
 
@@ -1395,7 +1413,8 @@ void LoadAssets()
 	model_perk2.Load("Models/perkMachine2/untitled.3ds");	
 	model_speed.Load("Models/speed/collectible.3ds");
 	model_nun.Load("Models/nun/Nun Statue N030424.3ds");
-
+	model_sun.Load("Models/sun/sun.3ds");
+	model_moon.Load("Models/moon/moon.3ds");
 
 
 	// Loading texture files
