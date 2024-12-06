@@ -762,10 +762,25 @@ void myDisplay(void)
 				lampPosition.x = playerX;  // Set lamp's X to player's X
 				lampPosition.z = playerZ;  // Set lamp's Z to player's Z
 
-				// Set light properties for moving lamp
+				// Update the light position
 				GLfloat light_position[] = { lampPosition.x, lampPosition.y + 5.0f, lampPosition.z, 1.0f };
 				glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+
+				// Stronger light properties
+				GLfloat ambientLight[] = { 0.5f, 0.5f, 0.5f, 1.0f };  // Bright ambient light
+				GLfloat diffuseLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };  // Strong white diffuse light
+				GLfloat specularLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };  // Strong specular highlight
+
+				glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
+				glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
+				glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
+
+				// Optionally adjust attenuation if needed
+				glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 0.1f);
+				glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.05f);
+				glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.01f);
 			}
+
 
 			glPushMatrix();
 			glTranslatef(lampPosition.x, lampPosition.y, lampPosition.z);
