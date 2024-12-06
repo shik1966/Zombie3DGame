@@ -93,7 +93,7 @@ Vector perkMachinePosition = Vector(28.0, 2.5, -15.0);  // Position of the perk 
 
 Vector tablePosition(-26.0, 0.0, -28.0);  // Position of the table
 bool tableInteracted = false;  // To ensure score is added only once
-bool scene1 = false;//ne 1 is active by default
+bool scene1 = true;//ne 1 is active by default
 bool scene2 = true;//cene 2 is inactive by default
 
 
@@ -130,9 +130,10 @@ Model_3DS model_car;
 Model_3DS model_gun3;
 Model_3DS model_truck;
 Model_3DS model_truck2;
-Model_3DS model_beast;
 Model_3DS model_invincibility;
 Model_3DS model_exit;
+Model_3DS model_beast;
+Model_3DS model_perk2;
 
 
 
@@ -787,7 +788,14 @@ void myDisplay(void)
 		glTranslatef(0.0, 0.0, 0.0);
 		glScalef(0.05, 0.05, 0.05);
 		glRotatef(0.0f, 1, 0, 0);
-		model_exit.Draw();
+		//model_exit.Draw();
+		glPopMatrix();
+
+		glPushMatrix();
+		glTranslatef(0.0, 0.0, 0.0);
+		glScalef(1, 1, 1);
+		glRotatef(0.0f, 1, 0, 0);
+		model_beast.Draw();
 		glPopMatrix();
 
 		}
@@ -1209,7 +1217,9 @@ void LoadAssets()
 	model_truck2.Load("Models/truck2/truck2.3DS");
 	model_invincibility.Load("Models/invincibility/invincible.3ds");
 	model_exit.Load("Models/exit/exit.3ds");
-	
+	//model_beast.Load("Models/beast/beast.3ds");
+	model_perk2.Load("Models/perkMachine2/untitled.3ds");
+
 
 
 	// Loading texture files
@@ -1376,7 +1386,6 @@ void regenerateHealth(int value) {
 	}
 	glutTimerFunc(5000, regenerateHealth, 0);  // Re-register timer every 5 seconds
 }
-
 
 
 void finishReload(int value) {
