@@ -145,6 +145,7 @@ Model_3DS model_invincibility;
 Model_3DS model_exit;
 Model_3DS model_beast;
 Model_3DS model_perk2;
+Model_3DS model_nun;
 
 
 
@@ -206,11 +207,20 @@ public:
 
 	void draw() {
 		if (!active) return;
-		glPushMatrix();
-		glTranslatef(x, y, z);
-		glScalef(0.05, 0.05, 0.05);
-		model_zombie.Draw();
-		glPopMatrix();
+		if (scene1) {
+			glPushMatrix();
+			glTranslatef(x, y, z);
+			glScalef(0.05, 0.05, 0.05);
+			model_zombie.Draw();
+			glPopMatrix();
+		}
+		else {
+			glPushMatrix();
+			glTranslatef(x, y, z);
+			glScalef(0.005, 0.005, 0.005);
+			model_nun.Draw();
+			glPopMatrix();
+		}
 	}
 
 	void updatePosition(float playerX, float playerZ) {
@@ -986,6 +996,11 @@ void myDisplay(void)
 				glPopMatrix();
 			}
 
+			
+			for (auto& zombie : zombies) {
+				zombie.draw();
+			}
+
 		}
 	}
 	else {
@@ -1110,6 +1125,7 @@ void setupCamera() {
 		gluLookAt(playerX, playerY + 5, playerZ,  // Camera position at player's eye level
 			playerX + sin(playerAngle * M_PI / 180.0), playerY + 5, playerZ + cos(playerAngle * M_PI / 180.0),  // Look at point
 			0.0, 1.0, 0.0);  // Up vector is always straight up
+		
 
 		// Draw weapon in first person view
 		glPushMatrix();
@@ -1284,6 +1300,7 @@ void LoadAssets()
 	model_exit.Load("Models/exit/exit.3ds");
 	//model_beast.Load("Models/beast/beast.3ds");
 	model_perk2.Load("Models/perkMachine2/untitled.3ds");
+	model_nun.Load("Models/nun/Nun Statue N030424.3ds");
 
 
 
@@ -1703,9 +1720,10 @@ void myKeyboard(unsigned char key, int x, int y) {
 		float distanceToCar = sqrt(pow(playerX - truckX, 2) + pow(playerZ - truckZ, 2));
 
 		// Check if the player is within a certain distance to the truck (e.g., 5.0 units)
-		if (distanceToCar < 5.0) {
+		if (distanceToCar < 5.0 && playerScore > 50) {
 			iskey = true;  // Player can interact with the truck
 			isTranslate = true;
+			playerScore -= 50;  // Deduct points
 		}
 		//check for collision with couch
 
