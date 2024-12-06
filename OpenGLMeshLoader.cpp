@@ -112,6 +112,14 @@ bool isTranslate= false;
 float truckY = 0.0f;
 bool isTranslate2 = false;
 float doorY = 0.0f;
+
+
+// Global definition
+Vector perkMachine2Position = Vector(27.0, 4.0, -20.0);  // Adjust position as needed
+bool perkMachine2Active = true;
+int perkMachine2Cost = 20;  // Cost in points
+
+
 // Model Variables
 Model_3DS model_lamp;
 Model_3DS model_couch;
@@ -132,9 +140,10 @@ Model_3DS model_car;
 Model_3DS model_gun3;
 Model_3DS model_truck;
 Model_3DS model_truck2;
-Model_3DS model_beast;
 Model_3DS model_invincibility;
 Model_3DS model_exit;
+Model_3DS model_beast;
+Model_3DS model_perk2;
 
 
 
@@ -778,7 +787,22 @@ void myDisplay(void)
 			model_truck.Draw();
 			glPopMatrix();
 
+		glPushMatrix();
+		glTranslatef(0.0, 0.0, 0.0);
+		glScalef(0.05, 0.05, 0.05);
+		glRotatef(0.0f, 1, 0, 0);
+		//model_exit.Draw();
+		glPopMatrix();
 		
+
+		if (perkMachine2Active) {
+			glPushMatrix();
+			glTranslatef(perkMachine2Position.x, perkMachine2Position.y, perkMachine2Position.z);
+			glScalef(0.15, 0.15, 0.15);  // Scale as needed
+			glRotatef(-90, 0, 1, 0);  // Adjust orientation as needed
+			model_perk2.Draw();  // Assuming you have a model for this machine
+			glPopMatrix();
+		}
 
 		}
 
@@ -805,6 +829,14 @@ void myDisplay(void)
 			for (int i = 0; i < 9; ++i) {
 				glPushMatrix();
 				glTranslatef(20.0 - i * 5.0, 3.0, 30.0); // Adjust the translation for each fence
+				glScalef(0.001, 0.01, 0.001);
+				glRotatef(90.0f, 0, 1, 0);
+				model_fence.Draw();
+				glPopMatrix();
+			}
+			for (int i = 0; i < 9; ++i) {
+				glPushMatrix();
+				glTranslatef(30.0 - i * 5.0, 3.0, -30.0); // Adjust the translation for each fence
 				glScalef(0.001, 0.01, 0.001);
 				glRotatef(90.0f, 0, 1, 0);
 				model_fence.Draw();
@@ -1232,7 +1264,9 @@ void LoadAssets()
 	model_truck2.Load("Models/truck2/truck2.3DS");
 	model_invincibility.Load("Models/invincibility/invincible.3ds");
 	model_exit.Load("Models/exit/exit.3ds");
-	
+	//model_beast.Load("Models/beast/beast.3ds");
+	model_perk2.Load("Models/perkMachine2/untitled.3ds");
+
 
 
 	// Loading texture files
@@ -1399,7 +1433,6 @@ void regenerateHealth(int value) {
 	}
 	glutTimerFunc(5000, regenerateHealth, 0);  // Re-register timer every 5 seconds
 }
-
 
 
 void finishReload(int value) {
@@ -1663,6 +1696,14 @@ void myKeyboard(unsigned char key, int x, int y) {
 		if (distanceToGun3 < 2.0 && playerScore>10) {  // Replace 2.0 with the pickup radius
 			isGun3 = true;  // Equip the gun
 			playerScore -= 10;  // Increase score
+		}
+		float distanceToPerkMachine2 = sqrt(pow(playerX - perkMachine2Position.x, 2) + pow(playerZ - perkMachine2Position.z, 2));
+		if (distanceToPerkMachine2 < 5.0 && perkMachine2Active && playerScore >= perkMachine2Cost) {
+			playerScore -= perkMachine2Cost;  // Deduct points
+			maxAmmo += 30;  // Increase ammo count, adjust amount as needed
+			std::cout << "Ammo increased. Current Ammo: " << currentAmmo << std::endl;
+			std::cout << "Remaining Score: " << playerScore << std::endl;
+			perkMachine2Active = false;  // Optional: deactivate after use
 		}
 
 
