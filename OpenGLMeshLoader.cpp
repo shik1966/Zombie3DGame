@@ -112,6 +112,7 @@ bool isTranslate= false;
 float truckY = 0.0f;
 bool isTranslate2 = false;
 float doorY = 0.0f;
+bool couchisvisible = true;
 
 
 // Global definition
@@ -652,12 +653,14 @@ void myDisplay(void)
 
 
 			// Draw couch
-			glPushMatrix();
-			glTranslatef(27.0, 1.0, -28.0);
-			glScalef(0.005, 0.005, 0.005);
-			glRotatef(0.0f, 1, 0, 0);
-			model_couch.Draw();
-			glPopMatrix();
+			if (couchisvisible) {
+				glPushMatrix();
+				glTranslatef(27.0, 1.0, -28.0);
+				glScalef(0.005, 0.005, 0.005);
+				glRotatef(0.0f, 1, 0, 0);
+				model_couch.Draw();
+				glPopMatrix();
+			}
 
 			// Draw couch2
 			glPushMatrix();
@@ -765,10 +768,20 @@ void myDisplay(void)
 					recoilAmount = 0;  // Ensure the recoil amount doesn't go negative
 				}
 			}
-			glTranslatef(weaponX, currentWeaponY, weaponZ);  // Use the modified Y-coordinate
-			glScalef(0.0035, 0.0035, 0.0035);  // Scaling to adjust the weapon size
-			glRotatef(weaponAngle, 0, 1, 0);  // Rotate according to the current weapon angle
-			model_gun.Draw();
+			
+			if(!couchisvisible)
+			{
+				glTranslatef(weaponX, currentWeaponY, weaponZ);  // Use the modified Y-coordinate
+				glScalef(0.3, 0.3, 0.3);  // Scaling to adjust the weapon size
+				glRotatef(weaponAngle, 0, 1, 0);  // Rotate according to the current weapon angle
+				model_gun3.Draw();
+			}
+			else {
+				glTranslatef(weaponX, currentWeaponY, weaponZ);  // Use the modified Y-coordinate
+				glScalef(0.0035, 0.0035, 0.0035);  // Scaling to adjust the weapon size
+				glRotatef(weaponAngle, 0, 1, 0);  // Rotate according to the current weapon angle
+				model_gun.Draw();
+			}
 			glPopMatrix();
 
 			//glScalef(0.0035, 0.0035, 0.0035);
@@ -1016,8 +1029,13 @@ void myDisplay(void)
 	renderBitmapString(10, HEIGHT - 20, GLUT_BITMAP_HELVETICA_18, healthText);
 
 	char timerText[50];
-	sprintf(timerText, "Timer: %d", countdownTime);
-	renderBitmapString(WIDTH - 120, HEIGHT - 20, GLUT_BITMAP_HELVETICA_18, timerText);
+	sprintf(timerText, "Count Down Timer: %d", countdownTime);
+	renderBitmapString(WIDTH - 190, HEIGHT - 20, GLUT_BITMAP_HELVETICA_18, timerText);
+
+	// render game timer
+	char timerText2[50];
+	sprintf(timerText2, "Game Timer: %d", gameTime);
+	renderBitmapString(WIDTH - 140, HEIGHT - 40, GLUT_BITMAP_HELVETICA_18, timerText2);
 
 	char scoreText[50];
 	sprintf(scoreText, "Score: %d", playerScore);
@@ -1689,6 +1707,36 @@ void myKeyboard(unsigned char key, int x, int y) {
 			iskey = true;  // Player can interact with the truck
 			isTranslate = true;
 		}
+		//check for collision with couch
+
+		// Couch dimensions and position
+		float couchX = 27.0f;        // Couch's X-coordinate
+		float couchZ = -28.0f;       // Couch's Z-coordinate
+		float couchWidth = 3.0f;     // Half-width of the couch in X direction
+		float couchDepth = 2.0f;     // Half-depth of the couch in Z direction
+
+		// Player's dimensions (approximated)
+		float playerHalfWidth = 0.5f;  // Assumed player's half-width for collision
+
+		// Collision detection with the couch (AABB - Axis-Aligned Bounding Box)
+		if ((playerX + playerHalfWidth >= couchX - couchWidth &&
+			playerX - playerHalfWidth <= couchX + couchWidth) &&
+			(playerZ + playerHalfWidth >= couchZ - couchDepth &&
+				playerZ - playerHalfWidth <= couchZ + couchDepth)) {
+			// Collision detected with the couch
+			// Perform desired action here
+			 couchisvisible = false;
+			
+		}
+
+		// Render the couch
+		glPushMatrix();
+		glTranslatef(couchX, 1.0f, couchZ);  // Position the couch
+		glScalef(0.005f, 0.005f, 0.005f);   // Scale the couch
+		glRotatef(0.0f, 1, 0, 0);           // Rotate the couch (if needed)
+		model_couch.Draw();
+		glPopMatrix();
+
 		//check for collision with the Gun 3
 		float distanceToGun3 = sqrt(pow(playerX, 2) + pow(playerZ + 10.0, 2)); // Gun3 assumed to be at (0, 0, -10)
 
