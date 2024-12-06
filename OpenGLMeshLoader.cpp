@@ -93,7 +93,7 @@ Vector perkMachinePosition = Vector(28.0, 2.5, -15.0);  // Position of the perk 
 
 Vector tablePosition(-26.0, 0.0, -28.0);  // Position of the table
 bool tableInteracted = false;  // To ensure score is added only once
-bool scene1 = true;//ne 1 is active by default
+bool scene1 = false;//ne 1 is active by default
 bool scene2 = true;//cene 2 is inactive by default
 
 
@@ -773,7 +773,7 @@ void myDisplay(void)
 
 
 	glPushMatrix();
-	glTranslatef(3.0, 0.0, 18.0);
+	glTranslatef(3.0, 0.0, 20.0);
 	glScalef(0.03, 0.03, 0.03);
 	glRotatef(0.0f, 1, 0, 0);
 	model_gasStation.Draw();
@@ -788,7 +788,7 @@ void myDisplay(void)
 
 	glPushMatrix();
 	glTranslatef(0.0, 5.0, 5.0);
-	glScalef(0.5, 0.5, 0.5);
+	glScalef(1,1, 1);
 	glRotatef(0.0f, 1, 0, 0);
 	model_gun3.Draw();
 	glPopMatrix();
