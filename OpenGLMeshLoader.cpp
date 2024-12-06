@@ -182,8 +182,20 @@ public:
 		if (health <= 0) {
 			active = false;
 		}
+		else {
+			staggerBack();
+		}
+	}
+
+	// Method to make the zombie stagger back when hit
+	void staggerBack() {
+		float staggerDistance = 2.0; // Distance to stagger back
+		x -= staggerDistance * cos(playerAngle * M_PI / 180.0); // Stagger back in the opposite direction of the player
+		z -= staggerDistance * sin(playerAngle * M_PI / 180.0);
 	}
 };
+
+
 std::vector<Zombie> zombies;
 
 Vector calculateDirection(float yaw, float pitch) {
